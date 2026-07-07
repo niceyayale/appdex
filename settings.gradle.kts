@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 rootProject.name = "appdex"
 
 include(":core:io")
+include(":core:apk")
