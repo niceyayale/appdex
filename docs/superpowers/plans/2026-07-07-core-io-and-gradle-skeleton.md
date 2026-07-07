@@ -592,6 +592,15 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
 /**
+ * SeekableChannel 本地 use 扩展。
+ * 原因:Kotlin 2.0.21 commonMain stdlib 不含 kotlin.Closeable(2.1.0 才加入),
+ * 故 stdlib 的 use 扩展也不可用。这里在测试包内本地定义。
+ * 未来升级到 Kotlin 2.1.0+ 后可删除此扩展,改用 stdlib。
+ */
+private inline fun <T : SeekableChannel, R> T.use(block: (T) -> R): R =
+    try { block(this) } finally { close() }
+
+/**
  * FileSystem 契约测试。所有 FileSystem 实现都应通过。
  * 子类通过 fs() 提供一个空的新实例。
  */
@@ -707,7 +716,7 @@ abstract class FileSystemContractTest {
 }
 ```
 
-注:`kotlin.use` 在 commonMain 已存在,测试中可直接使用,无需自定义。
+注:由于 Kotlin 2.0.21 commonMain 无 `kotlin.Closeable`,测试文件顶部已定义本地 `use` 扩展。升级到 Kotlin 2.1.0+ 后可删除该扩展,改用 stdlib。
 
 - [ ] **Step 2: 写 InMemoryFileSystemTest(空实现即可,继承契约)**
 
