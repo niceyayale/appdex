@@ -12,6 +12,7 @@ import io.appdex.core.io.SeekableChannel
  * v2 签名 ID:0x7109871a
  * v3 签名 ID:0xf05368c0
  */
+@Suppress("MagicNumber")
 class ApkSigningBlockReader {
 
     /**

@@ -5,6 +5,7 @@ import io.appdex.core.io.ByteReader
 /**
  * AXML StringPool。
  */
+@Suppress("MagicNumber", "UnusedPrivateProperty")
 class StringPool(
     val strings: List<String>,
 ) {

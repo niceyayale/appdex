@@ -4,6 +4,7 @@ import io.appdex.core.arsc.chunk.TableChunkType
 import io.appdex.core.io.ByteReader
 import io.appdex.core.io.InMemorySeekableChannel
 
+@Suppress("MagicNumber")
 class BinaryArscReader : ArscReader {
 
     override fun read(binary: ByteArray): ArscTable {

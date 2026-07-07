@@ -9,6 +9,7 @@ import io.appdex.core.io.SeekableChannel
  * 实现基于 PKWARE APPNOTE 6.3.x,支持 STORED(0)和 DEFLATE(8)。
  * 不支持 ZIP64(后续 plan 再加)。
  */
+@Suppress("MagicNumber")
 class ZipReader {
 
     /**

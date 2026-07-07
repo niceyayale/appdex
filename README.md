@@ -4,7 +4,8 @@
 
 ## 状态
 
-子项目 #1a: `:core:io` KMP 文件系统抽象 —— 进行中
+- 子项目 #1a: `:core:io` KMP 文件系统抽象 —— ✅ 完成
+- 子项目 #2: `:core:apk` / `:core:axml` / `:core:arsc` 只读解析 —— ✅ 完成(MVP)
 
 ## 构建
 

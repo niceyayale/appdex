@@ -10,6 +10,7 @@ import io.appdex.core.io.InMemorySeekableChannel
  *
  * 解析:XML header → StringPool → XML 事件序列(StartTag/Text/EndTag)→ 文本 XML。
  */
+@Suppress("MagicNumber", "UnusedPrivateProperty")
 class BinaryAxmlReader : AxmlReader {
 
     override fun read(binary: ByteArray): AxmlDocument {

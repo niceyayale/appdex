@@ -12,6 +12,7 @@ package io.appdex.core.io
  */
 class ByteReader(private val channel: SeekableChannel) {
 
+    @Suppress("MagicNumber")
     private val scratch = ByteArray(8)
 
     /** 当前游标位置。 */
@@ -28,11 +29,13 @@ class ByteReader(private val channel: SeekableChannel) {
         position(_cursor + n)
     }
 
+    @Suppress("MagicNumber")
     fun readUInt8(): Int {
         readFully(scratch, 1)
         return scratch[0].toInt() and 0xFF
     }
 
+    @Suppress("MagicNumber")
     fun readUInt16LE(): Int {
         readFully(scratch, 2)
         return (scratch[0].toInt() and 0xFF) or
@@ -41,6 +44,7 @@ class ByteReader(private val channel: SeekableChannel) {
 
     fun readInt16LE(): Short = readUInt16LE().toShort()
 
+    @Suppress("MagicNumber")
     fun readInt32LE(): Int {
         readFully(scratch, 4)
         return (scratch[0].toInt() and 0xFF) or
@@ -50,8 +54,10 @@ class ByteReader(private val channel: SeekableChannel) {
     }
 
     /** 读 4 字节无符号整数,用 Long 避免溢出。 */
+    @Suppress("MagicNumber")
     fun readUInt32LE(): Long = readInt32LE().toLong() and 0xFFFFFFFFL
 
+    @Suppress("MagicNumber")
     fun readInt64LE(): Long {
         readFully(scratch, 8)
         var v = 0L
@@ -76,7 +82,7 @@ class ByteReader(private val channel: SeekableChannel) {
             // 到目标偏移,处理部分读。注:不使用 System.arraycopy(commonMain 不可用)。
             val tmp = ByteArray(len - read)
             val n = channel.read(tmp, len - read)
-            if (n <= 0) throw IllegalStateException("unexpected EOF at ${_cursor + read}, need $len bytes")
+            check(n > 0) { "unexpected EOF at ${_cursor + read}, need $len bytes" }
             tmp.copyInto(buf, read, 0, n)
             read += n
             _cursor += n
