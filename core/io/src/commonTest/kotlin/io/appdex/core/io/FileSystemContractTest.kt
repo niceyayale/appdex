@@ -10,7 +10,7 @@ import org.junit.jupiter.api.assertThrows
  * 故 stdlib 的 use 扩展也不可用。这里在测试包内本地定义。
  * 未来升级到 Kotlin 2.1.0+ 后可删除此扩展,改用 stdlib。
  */
-private inline fun <T : SeekableChannel, R> T.use(block: (T) -> R): R =
+internal inline fun <T : SeekableChannel, R> T.use(block: (T) -> R): R =
     try { block(this) } finally { close() }
 
 /**
