@@ -1,6 +1,9 @@
 package io.appdex.core.apk
 
 import io.appdex.core.apk.signing.ApkSignatureInfo
+import io.appdex.core.apk.signing.ApkSigningBlockReader
+import io.appdex.core.apk.zip.ZipEntry
+import io.appdex.core.apk.zip.ZipReader
 import io.appdex.core.io.SeekableChannel
 
 /**
@@ -28,4 +31,35 @@ interface ApkReader {
 
     /** 读取签名信息。无签名时 hasV2Signature/hasV3Signature 均为 false。 */
     fun readSignatureInfo(channel: SeekableChannel): ApkSignatureInfo
+}
+
+/**
+ * APK 读取实现。
+ *
+ * 组合 ZipReader 和 ApkSigningBlockReader。
+ */
+class BinaryApkReader : ApkReader {
+
+    override fun listEntries(channel: SeekableChannel): List<ApkEntry> {
+        val zip = ZipReader()
+        val eocd = zip.readEocd(channel)
+        return zip.listEntries(channel, eocd).map { e ->
+            ApkEntry(e.name, e.compressionMethod, e.compressedSize, e.uncompressedSize, e.crc32, e.localHeaderOffset)
+        }
+    }
+
+    override fun readEntry(channel: SeekableChannel, entry: ApkEntry): ByteArray {
+        val zip = ZipReader()
+        val zipEntry = ZipEntry(
+            entry.name, entry.compressionMethod, entry.compressedSize,
+            entry.uncompressedSize, entry.crc32, entry.localHeaderOffset,
+        )
+        return zip.readEntry(channel, zipEntry)
+    }
+
+    override fun readSignatureInfo(channel: SeekableChannel): ApkSignatureInfo {
+        val zip = ZipReader()
+        val eocd = zip.readEocd(channel)
+        return ApkSigningBlockReader().detect(channel, eocd.cdOffset)
+    }
 }
