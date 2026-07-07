@@ -35,4 +35,31 @@ class ZipReaderTest {
         val eocd = ZipReader().readEocd(ch)
         assertEquals(1, eocd.entryCount)
     }
+
+    @Test
+    fun `lists entries of zip`() {
+        val bytes = ZipSample.buildWithStoredEntries(
+            "a.txt" to byteArrayOf(1, 2, 3),
+            "b.txt" to byteArrayOf(4, 5),
+        )
+        val ch = InMemorySeekableChannel(bytes)
+        val zip = ZipReader()
+        val eocd = zip.readEocd(ch)
+        val entries = zip.listEntries(ch, eocd)
+        assertEquals(2, entries.size)
+        assertEquals("a.txt", entries[0].name)
+        assertEquals(0, entries[0].compressionMethod)
+        assertEquals(3L, entries[0].uncompressedSize)
+    }
+
+    @Test
+    fun `reads stored entry content`() {
+        val bytes = ZipSample.buildWithStoredEntries("a.txt" to byteArrayOf(10, 20, 30))
+        val ch = InMemorySeekableChannel(bytes)
+        val zip = ZipReader()
+        val eocd = zip.readEocd(ch)
+        val entries = zip.listEntries(ch, eocd)
+        val content = zip.readEntry(ch, entries[0])
+        assertArrayEquals(byteArrayOf(10, 20, 30), content)
+    }
 }

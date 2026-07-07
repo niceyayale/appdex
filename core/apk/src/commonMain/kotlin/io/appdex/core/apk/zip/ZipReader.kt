@@ -54,5 +54,69 @@ class ZipReader {
         return Eocd(entryCount, cdSize, cdOffset)
     }
 
-    // listEntries / readEntry 在后续 Task 加
+    /**
+     * 列出 ZIP 内所有条目。需要先读 EOCD。
+     */
+    fun listEntries(channel: SeekableChannel, eocd: Eocd): List<ZipEntry> {
+        val reader = ByteReader(channel)
+        reader.position(eocd.cdOffset)
+        val entries = mutableListOf<ZipEntry>()
+        repeat(eocd.entryCount) {
+            val sig = reader.readInt32LE()
+            require(sig == 0x02014b50) { "bad central directory entry signature: ${sig.toString(16)}" }
+            reader.skip(4) // version made by, version needed
+            reader.skip(2) // flags
+            val method = reader.readUInt16LE()
+            reader.skip(4) // mod time, date
+            val crc = reader.readUInt32LE()
+            val compressed = reader.readUInt32LE()
+            val uncompressed = reader.readUInt32LE()
+            val nameLen = reader.readUInt16LE()
+            val extraLen = reader.readUInt16LE()
+            val commentLen = reader.readUInt16LE()
+            reader.skip(8) // disk, internal attrs, external attrs
+            val localOffset = reader.readUInt32LE()
+            val name = reader.readBytes(nameLen).toString(Charsets.UTF_8)
+            reader.skip((extraLen + commentLen).toLong())
+            entries.add(ZipEntry(name, method, compressed, uncompressed, crc, localOffset))
+        }
+        return entries
+    }
+
+    /**
+     * 读取条目(解压后)内容。
+     * 支持 STORED(0)和 DEFLATE(8)。
+     */
+    fun readEntry(channel: SeekableChannel, entry: ZipEntry): ByteArray {
+        val reader = ByteReader(channel)
+        reader.position(entry.localHeaderOffset)
+        val sig = reader.readInt32LE()
+        require(sig == 0x04034b50) { "bad local file header signature: ${sig.toString(16)}" }
+        reader.skip(22) // version, flags, method, time, date, crc, compressed, uncompressed
+        val nameLen = reader.readUInt16LE()
+        val extraLen = reader.readUInt16LE()
+        reader.skip((nameLen + extraLen).toLong())
+
+        // 接下来是压缩数据
+        return when (entry.compressionMethod) {
+            0 -> {
+                // STORED
+                reader.readBytes(entry.uncompressedSize.toInt())
+            }
+            8 -> {
+                // DEFLATE - jvmMain 用 java.util.zip.Inflater
+                readDeflated(reader, entry.compressedSize.toInt(), entry.uncompressedSize.toInt())
+            }
+            else -> throw UnsupportedOperationException("unsupported compression method: ${entry.compressionMethod}")
+        }
+    }
+
+    @Suppress("UNUSED_PARAMETER")
+    private fun readDeflated(reader: ByteReader, compressedSize: Int, uncompressedSize: Int): ByteArray {
+        // 注意:这里依赖 JVM Inflater,所以 ZipReader 的 readEntry 仅在 jvmMain 可用
+        // 为了简化 MVP,把 ZipReader 放在 commonMain 但 readEntry 的 DEFLATE 分支
+        // 通过 expect/actual 调用平台 inflater
+        // 这里先抛异常,Task 5 会处理
+        throw UnsupportedOperationException("DEFLATE support added in Task 5")
+    }
 }
