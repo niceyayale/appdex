@@ -1,7 +1,11 @@
 package io.appdex.core.dex
 
+import com.android.tools.smali.baksmali.Adaptors.ClassDefinition
+import com.android.tools.smali.baksmali.BaksmaliOptions
+import com.android.tools.smali.baksmali.formatter.BaksmaliWriter
 import com.android.tools.smali.dexlib2.Opcodes
 import com.android.tools.smali.dexlib2.dexbacked.DexBackedDexFile
+import java.io.StringWriter
 
 /**
  * 基于 dexlib2 的 DEX 只读解析器实现。
@@ -34,7 +38,14 @@ class BinaryDexReader : DexReader {
     }
 
     override fun toSmali(dexBytes: ByteArray, classType: String): String {
-        TODO("Task 4 实现")
+        val dexFile = DexBackedDexFile(Opcodes.getDefault(), dexBytes)
+        val targetClass = dexFile.classes.first { it.type == classType }
+        val classDefinition = ClassDefinition(BaksmaliOptions(), targetClass)
+        val stringWriter = StringWriter()
+        BaksmaliWriter(stringWriter).use { writer ->
+            classDefinition.writeTo(writer)
+        }
+        return stringWriter.toString()
     }
 
     private fun extractSimpleName(typeDescriptor: String): String {

@@ -46,4 +46,14 @@ class BinaryDexReaderTest {
         assertEquals("V", method.returnType)
         assertTrue(method.parameterTypes.isEmpty())
     }
+
+    @Test
+    fun `disassembles class to smali`() {
+        val bytes = DexSample.buildMinimalDex()
+        val reader = BinaryDexReader()
+        val smali = reader.toSmali(bytes, "Lcom/example/Test;")
+        assertTrue(smali.contains(".class"))
+        assertTrue(smali.contains(".super"))
+        assertTrue(smali.contains("Lcom/example/Test;"))
+    }
 }

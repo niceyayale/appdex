@@ -29,12 +29,14 @@ kotlin {
             dependencies {
                 implementation(libs.dexlib2)
                 implementation(libs.smali)
+                implementation(libs.baksmali)
             }
         }
         jvmTest {
             dependencies {
                 implementation(libs.dexlib2)
                 implementation(libs.smali)
+                implementation(libs.baksmali)
             }
         }
     }
