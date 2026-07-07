@@ -17,3 +17,4 @@ rootProject.name = "appdex"
 
 include(":core:io")
 include(":core:apk")
+include(":core:axml")
