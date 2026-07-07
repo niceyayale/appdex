@@ -99,10 +99,14 @@ object AxmlSample {
     )
 
     private fun buildStartTag(stringIndex: Int, attributes: List<AttrSpec>): ByteArray {
-        // XML_START_TAG: type=0x0102, headerSize=16, chunkSize=16 + 20*attrCount
-        // 内容:lineNumber(4) + comment(4) + nsPrefix(4) + name(4) + attrStart(2) + attrSize(2) + attrCount(2) + idIdx(2) + classIdx(2) + styleIdx(2) + attrs
+        // XML_START_TAG: type=0x0102, headerSize=16, chunkSize=36 + 20*attrCount
+        // 内容:type(2)+headerSize(2)+chunkSize(4) = 8
+        //      + lineNumber(4)+comment(4)+nsPrefix(4)+name(4) = 16
+        //      + attrStart(2)+attrSize(2)+attrCount(2)+idIdx(2)+classIdx(2)+styleIdx(2) = 12
+        //      + attrs (attrCount * 20)
+        // 总计 = 36 + attrCount * 20
         val attrBytes = attributes.size * 20
-        val chunkSize = 16 + 9 * 2 + attrBytes // header(16) + fields(18) + attrs
+        val chunkSize = 36 + attrBytes
         val buf = mutableListOf<Byte>()
         le16(buf, 0x0102) // type
         le16(buf, 16)     // headerSize
@@ -130,10 +134,13 @@ object AxmlSample {
     }
 
     private fun buildEndTag(stringIndex: Int): ByteArray {
+        // XML_END_TAG: type(2)+headerSize(2)+chunkSize(4) = 8
+        //              + lineNumber(4)+comment(4)+nsPrefix(4)+name(4) = 16
+        //              总计 = 24
         val buf = mutableListOf<Byte>()
         le16(buf, 0x0103) // type
         le16(buf, 16)     // headerSize
-        le32(buf, 16)     // chunkSize
+        le32(buf, 24)     // chunkSize
         le32(buf, 1)      // lineNumber
         le32(buf, 0xFFFFFFFF) // comment
         le32(buf, 0xFFFFFFFF) // nsPrefix
