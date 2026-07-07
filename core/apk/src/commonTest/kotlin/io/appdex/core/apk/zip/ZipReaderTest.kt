@@ -62,4 +62,32 @@ class ZipReaderTest {
         val content = zip.readEntry(ch, entries[0])
         assertArrayEquals(byteArrayOf(10, 20, 30), content)
     }
+
+    @Test
+    fun `reads deflated entry content`() {
+        // 用 java.util.zip 构造一个 DEFLATE 压缩的 ZIP
+        val content = ByteArray(1000) { it.toByte() } // 重复模式,deflate 压缩率高
+        val zipBytes = buildDeflatedZip("a.txt" to content)
+        val ch = InMemorySeekableChannel(zipBytes)
+        val zip = ZipReader()
+        val eocd = zip.readEocd(ch)
+        val entries = zip.listEntries(ch, eocd)
+        assertEquals(8, entries[0].compressionMethod)
+        val read = zip.readEntry(ch, entries[0])
+        assertArrayEquals(content, read)
+    }
+
+    private fun buildDeflatedZip(vararg entries: Pair<String, ByteArray>): ByteArray {
+        val baos = java.io.ByteArrayOutputStream()
+        val zos = java.util.zip.ZipOutputStream(baos)
+        for ((name, content) in entries) {
+            val entry = java.util.zip.ZipEntry(name)
+            entry.method = java.util.zip.ZipEntry.DEFLATED
+            zos.putNextEntry(entry)
+            zos.write(content)
+            zos.closeEntry()
+        }
+        zos.close()
+        return baos.toByteArray()
+    }
 }

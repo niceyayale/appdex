@@ -111,12 +111,8 @@ class ZipReader {
         }
     }
 
-    @Suppress("UNUSED_PARAMETER")
     private fun readDeflated(reader: ByteReader, compressedSize: Int, uncompressedSize: Int): ByteArray {
-        // 注意:这里依赖 JVM Inflater,所以 ZipReader 的 readEntry 仅在 jvmMain 可用
-        // 为了简化 MVP,把 ZipReader 放在 commonMain 但 readEntry 的 DEFLATE 分支
-        // 通过 expect/actual 调用平台 inflater
-        // 这里先抛异常,Task 5 会处理
-        throw UnsupportedOperationException("DEFLATE support added in Task 5")
+        val compressed = reader.readBytes(compressedSize)
+        return inflate(compressed, uncompressedSize)
     }
 }
