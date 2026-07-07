@@ -6,6 +6,7 @@
 
 - 子项目 #1a: `:core:io` KMP 文件系统抽象 —— ✅ 完成
 - 子项目 #2: `:core:apk` / `:core:axml` / `:core:arsc` 只读解析 —— ✅ 完成(MVP)
+- 子项目 #4: `:core:dex` DEX 只读解析(smali 反汇编) —— ✅ 完成(MVP)
 
 ## 构建
 
