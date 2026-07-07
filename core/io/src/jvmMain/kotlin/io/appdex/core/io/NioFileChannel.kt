@@ -43,6 +43,7 @@ class NioFileChannel(
     }
 
     companion object {
+        @Suppress("SpreadOperator")
         fun open(path: Path, mode: Mode): NioFileChannel {
             val options = mutableSetOf<OpenOption>()
             when (mode) {
