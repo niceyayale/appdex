@@ -1,5 +1,6 @@
 package io.appdex.core.apk
 
+import io.appdex.core.apk.signing.ApkSignatureInfo
 import io.appdex.core.io.SeekableChannel
 
 /**
@@ -13,17 +14,6 @@ data class ApkEntry(
     val crc32: Long,
     /** 条目数据在 APK 文件中的起始偏移(local header 之后是数据)。 */
     val localHeaderOffset: Long,
-)
-
-/**
- * APK 签名信息。
- */
-data class ApkSignatureInfo(
-    val hasV2Signature: Boolean,
-    val hasV3Signature: Boolean,
-    /** 签名块在 APK 文件中的偏移。 */
-    val signingBlockOffset: Long,
-    val signingBlockSize: Long,
 )
 
 /**
