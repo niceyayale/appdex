@@ -1,13 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
+    <!-- Default: HTTPS only -->
     <base-config cleartextTrafficPermitted="false">
         <trust-anchors>
             <certificates src="system" />
         </trust-anchors>
     </base-config>
+
+    <!-- Allow cleartext for local network (Web server + FTP) -->
     <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="true">10.0.0.0</domain>
-        <domain includeSubdomains="true">172.16.0.0</domain>
-        <domain includeSubdomains="true">192.168.0.0</domain>
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+        <!-- Class A private: 10.0.0.0/8 -->
+        <domain includeSubdomains="false">10.0.0.0</domain>
+        <!-- Class B private: 172.16.0.0/12 -->
+        <domain includeSubdomains="false">172.16.0.0</domain>
+        <!-- Class C private: 192.168.0.0/16 -->
+        <domain includeSubdomains="false">192.168.0.0</domain>
     </domain-config>
 </network-security-config>

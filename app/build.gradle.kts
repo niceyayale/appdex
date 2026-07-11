@@ -15,7 +15,7 @@ android {
         applicationId = "com.appdex"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
+        versionCode = 7
         versionName = "1.0.0"
         vectorDrawables.useSupportLibrary = true
     }

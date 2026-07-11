@@ -1,4 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">APPDEX</string>
+
+    <!-- Navigation -->
+    <string name="nav_files">Files</string>
+    <string name="nav_editor">Editor</string>
+    <string name="nav_analyzer">APK</string>
+    <string name="nav_terminal">Terminal</string>
+    <string name="nav_tools">Tools</string>
+    <string name="nav_remote">Remote</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- File Manager -->
+    <string name="file_empty">Empty folder</string>
+    <string name="file_copy">Copy</string>
+    <string name="file_move">Move</string>
+    <string name="file_delete">Delete</string>
+    <string name="file_rename">Rename</string>
+    <string name="file_compress">Compress</string>
+    <string name="file_extract">Extract</string>
+    <string name="file_bookmark">Bookmark</string>
+
+    <!-- Settings -->
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_file_manager">File Manager</string>
+    <string name="settings_editor">Editor</string>
+    <string name="settings_terminal">Terminal</string>
+    <string name="settings_storage">Storage</string>
+    <string name="settings_about">About</string>
+
+    <!-- Remote -->
+    <string name="web_server">Web Server</string>
+    <string name="ftp_client">FTP Client</string>
+    <string name="server_start">Start Server</string>
+    <string name="server_stop">Stop Server</string>
+
+    <!-- Permissions -->
+    <string name="perm_storage_title">Storage Permission</string>
+    <string name="perm_storage_message">APPDEX needs storage access to manage files. Please grant all files access in the next screen.</string>
 </resources>

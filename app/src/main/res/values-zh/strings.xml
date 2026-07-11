@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">APPDEX</string>
+
+    <!-- Navigation -->
+    <string name="nav_files">文件</string>
+    <string name="nav_editor">编辑器</string>
+    <string name="nav_analyzer">APK</string>
+    <string name="nav_terminal">终端</string>
+    <string name="nav_tools">工具</string>
+    <string name="nav_remote">远程</string>
+    <string name="nav_settings">设置</string>
+
+    <!-- File Manager -->
+    <string name="file_empty">空文件夹</string>
+    <string name="file_copy">复制</string>
+    <string name="file_move">移动</string>
+    <string name="file_delete">删除</string>
+    <string name="file_rename">重命名</string>
+    <string name="file_compress">压缩</string>
+    <string name="file_extract">解压</string>
+    <string name="file_bookmark">书签</string>
+
+    <!-- Settings -->
+    <string name="settings_appearance">外观</string>
+    <string name="settings_theme">主题</string>
+    <string name="settings_language">语言</string>
+    <string name="settings_file_manager">文件管理</string>
+    <string name="settings_editor">编辑器</string>
+    <string name="settings_terminal">终端</string>
+    <string name="settings_storage">存储</string>
+    <string name="settings_about">关于</string>
+
+    <!-- Remote -->
+    <string name="web_server">Web 服务器</string>
+    <string name="ftp_client">FTP 客户端</string>
+    <string name="server_start">启动服务器</string>
+    <string name="server_stop">停止服务器</string>
+
+    <!-- Permissions -->
+    <string name="perm_storage_title">存储权限</string>
+    <string name="perm_storage_message">APPDEX 需要存储访问权限来管理文件。请在下一个界面中授予所有文件访问权限。</string>
+</resources>
