@@ -3,8 +3,6 @@ package com.appdex.analyzer
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.InsertDriveFile
+import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -38,8 +37,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -52,14 +49,12 @@ fun ApkAnalyzerScreen(
     viewModel: ApkAnalyzerViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
-    val context = LocalContext.current
 
     val filePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
         if (uri != null) {
-            val path = uri.path ?: return@rememberLauncherForActivityResult
-            viewModel.handleIntent(ApkAnalyzerIntent.OpenApk(path, uri))
+            viewModel.handleIntent(ApkAnalyzerIntent.OpenApk(uri.path ?: "", uri))
         }
     }
 
@@ -96,7 +91,9 @@ fun ApkAnalyzerScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.height(24.dp))
-                androidx.compose.material3.Button(onClick = { filePicker.launch(arrayOf("application/vnd.android.package-archive", "*/*")) }) {
+                androidx.compose.material3.Button(onClick = {
+                    filePicker.launch(arrayOf("application/vnd.android.package-archive", "*/*"))
+                }) {
                     Text("Select APK")
                 }
             }
@@ -109,40 +106,64 @@ fun ApkAnalyzerScreen(
             ) {
                 // Basic info card
                 item {
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        ),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text("Basic Info", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
-                            Spacer(modifier = Modifier.height(8.dp))
-                            InfoRow("File size", FormatUtil.formatFileSize(info.fileSize))
-                            InfoRow("Total entries", "${info.entries.size}")
-                            info.manifest.packageName.takeIf { it.isNotEmpty() }?.let { InfoRow("Package", it) }
-                            info.manifest.versionName.takeIf { it.isNotEmpty() }?.let { InfoRow("Version", "${it} (${info.manifest.versionCode})") }
-                            if (info.manifest.minSdk > 0) InfoRow("Min SDK", "${info.manifest.minSdk}")
-                            if (info.manifest.targetSdk > 0) InfoRow("Target SDK", "${info.manifest.targetSdk}")
-                            if (info.manifest.permissions.isNotEmpty()) {
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text("Permissions (${info.manifest.permissions.size})", style = MaterialTheme.typography.labelLarge)
-                                info.manifest.permissions.take(10).forEach { perm ->
-                                    Text(
-                                        text = "  • $perm",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.padding(start = 8.dp)
-                                    )
+                    InfoCard(title = "Basic Info") {
+                        InfoRow("File size", FormatUtil.formatFileSize(info.fileSize))
+                        InfoRow("Total entries", "${info.entries.size}")
+                        info.manifest.packageName.takeIf { it.isNotEmpty() }?.let { InfoRow("Package", it) }
+                        info.manifest.versionName.takeIf { it.isNotEmpty() }?.let {
+                            InfoRow("Version", "${it} (${info.manifest.versionCode})")
+                        }
+                        if (info.manifest.minSdk > 0) InfoRow("Min SDK", "${info.manifest.minSdk}")
+                        if (info.manifest.targetSdk > 0) InfoRow("Target SDK", "${info.manifest.targetSdk}")
+                    }
+                }
+
+                // Signatures card
+                if (info.signatures.isNotEmpty()) {
+                    item {
+                        InfoCard(title = "Signatures (${info.signatures.size})") {
+                            info.signatures.forEachIndexed { index, sig ->
+                                if (index > 0) Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "v${sig.version} Signature",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                InfoRow("Algorithm", sig.algorithm)
+                                if (sig.certificateSubject.isNotEmpty()) {
+                                    InfoRow("Subject", sig.certificateSubject)
                                 }
-                                if (info.manifest.permissions.size > 10) {
-                                    Text(
-                                        text = "  ... and ${info.manifest.permissions.size - 10} more",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.padding(start = 8.dp)
-                                    )
+                                if (sig.certificateIssuer.isNotEmpty()) {
+                                    InfoRow("Issuer", sig.certificateIssuer)
                                 }
+                                if (sig.serialNumber.isNotEmpty()) {
+                                    InfoRow("Serial", sig.serialNumber)
+                                }
+                                if (sig.validFrom > 0) {
+                                    InfoRow("Valid from", FormatUtil.formatTimestamp(sig.validFrom))
+                                }
+                                if (sig.validTo > 0) {
+                                    InfoRow("Valid to", FormatUtil.formatTimestamp(sig.validTo))
+                                }
+                                InfoRow("SHA-256", sig.sha256)
+                                InfoRow("SHA-1", sig.sha1)
+                                InfoRow("MD5", sig.md5)
+                            }
+                        }
+                    }
+                }
+
+                // Permissions
+                if (info.manifest.permissions.isNotEmpty()) {
+                    item {
+                        InfoCard(title = "Permissions (${info.manifest.permissions.size})") {
+                            info.manifest.permissions.forEach { perm ->
+                                Text(
+                                    text = "• $perm",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(start = 8.dp, top = 2.dp)
+                                )
                             }
                         }
                     }
@@ -171,6 +192,25 @@ fun ApkAnalyzerScreen(
             ) {
                 Text(text = err, color = MaterialTheme.colorScheme.error)
             }
+        }
+    }
+}
+
+@Composable
+private fun InfoCard(
+    title: String,
+    content: @Composable () -> Unit
+) {
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+            Spacer(modifier = Modifier.height(8.dp))
+            content()
         }
     }
 }

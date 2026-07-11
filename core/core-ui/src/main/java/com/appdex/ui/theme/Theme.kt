@@ -74,11 +74,19 @@ val DeepSpaceLightColorScheme = lightColorScheme(
     onErrorContainer = OnErrorRedContainer,
 )
 
+enum class AppThemeMode { SYSTEM, LIGHT, DARK }
+
 @Composable
 fun AppDexTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    themeMode: AppThemeMode = AppThemeMode.SYSTEM,
     content: @Composable () -> Unit
 ) {
+    val darkTheme = when (themeMode) {
+        AppThemeMode.SYSTEM -> isSystemInDarkTheme()
+        AppThemeMode.LIGHT -> false
+        AppThemeMode.DARK -> true
+    }
+
     val colorScheme = if (darkTheme) {
         DeepSpaceDarkColorScheme
     } else {

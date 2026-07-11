@@ -12,6 +12,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.util.zip.ZipEntry
+import java.util.zip.ZipInputStream
+import java.util.zip.ZipOutputStream
 import javax.inject.Inject
 
 @HiltViewModel
@@ -147,6 +152,10 @@ class FileManagerViewModel @Inject constructor() : BaseViewModel<FileManagerInte
     }
 
     private fun searchFiles(query: String, regex: Boolean) {
+        if (query.isBlank()) {
+            refresh()
+            return
+        }
         update { it.copy(isSearching = true, searchQuery = query) }
         viewModelScope.launch(Dispatchers.IO) {
             val baseDir = File(currentState.currentPath)
@@ -210,12 +219,105 @@ class FileManagerViewModel @Inject constructor() : BaseViewModel<FileManagerInte
     }
 
     private fun compressFiles(paths: List<String>, target: String) {
-        // TODO: Implement using lib-archive
-        emitEffect(FileManagerEffect.CompressComplete)
+        if (paths.isEmpty()) return
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val total = paths.size
+                val targetFile = File(target)
+                ZipOutputStream(FileOutputStream(targetFile)).use { zos ->
+                    paths.forEachIndexed { index, path ->
+                        update {
+                            it.copy(operationProgress = FileOperation(
+                                type = FileOperationType.COMPRESS,
+                                current = index + 1,
+                                total = total,
+                                currentFile = File(path).name
+                            ))
+                        }
+                        val srcFile = File(path)
+                        if (srcFile.isDirectory) {
+                            zipDirectory(srcFile, srcFile.parentFile?.name ?: "", zos)
+                        } else {
+                            zipFile(srcFile, "", zos)
+                        }
+                    }
+                }
+                update { it.copy(operationProgress = null, selectedPaths = emptySet()) }
+                emitEffect(FileManagerEffect.CompressComplete)
+                refresh()
+            } catch (e: Exception) {
+                update { it.copy(operationProgress = null) }
+                emitEffect(FileManagerEffect.Error("Compress failed: ${e.message}"))
+            }
+        }
+    }
+
+    private fun zipFile(file: File, basePath: String, zos: ZipOutputStream) {
+        val entryName = if (basePath.isEmpty()) file.name else "$basePath/${file.name}"
+        zos.putNextEntry(ZipEntry(entryName))
+        FileInputStream(file).use { fis ->
+            val buffer = ByteArray(8192)
+            var len: Int
+            while (fis.read(buffer).also { len = it } > 0) {
+                zos.write(buffer, 0, len)
+            }
+        }
+        zos.closeEntry()
+    }
+
+    private fun zipDirectory(dir: File, basePath: String, zos: ZipOutputStream) {
+        val dirName = if (basePath.isEmpty()) dir.name else "$basePath/${dir.name}"
+        dir.listFiles()?.forEach { file ->
+            if (file.isDirectory) {
+                zipDirectory(file, dirName, zos)
+            } else {
+                zipFile(file, dirName, zos)
+            }
+        }
     }
 
     private fun extractArchive(path: String, target: String) {
-        // TODO: Implement using lib-archive
-        emitEffect(FileManagerEffect.ExtractComplete)
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val zipFile = File(path)
+                val targetDir = File(target)
+                targetDir.mkdirs()
+
+                ZipInputStream(FileInputStream(zipFile)).use { zis ->
+                    var entry: ZipEntry
+                    var count = 0
+                    while (zis.nextEntry.also { entry = it } != null) {
+                        count++
+                        update {
+                            it.copy(operationProgress = FileOperation(
+                                type = FileOperationType.EXTRACT,
+                                current = count,
+                                total = 0,
+                                currentFile = entry.name
+                            ))
+                        }
+                        val outFile = File(targetDir, entry.name)
+                        if (entry.isDirectory) {
+                            outFile.mkdirs()
+                        } else {
+                            outFile.parentFile?.mkdirs()
+                            FileOutputStream(outFile).use { fos ->
+                                val buffer = ByteArray(8192)
+                                var len: Int
+                                while (zis.read(buffer).also { len = it } > 0) {
+                                    fos.write(buffer, 0, len)
+                                }
+                            }
+                        }
+                        zis.closeEntry()
+                    }
+                }
+                update { it.copy(operationProgress = null) }
+                emitEffect(FileManagerEffect.ExtractComplete)
+            } catch (e: Exception) {
+                update { it.copy(operationProgress = null) }
+                emitEffect(FileManagerEffect.Error("Extract failed: ${e.message}"))
+            }
+        }
     }
 }

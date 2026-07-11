@@ -5,6 +5,8 @@ import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -14,24 +16,24 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.DriveFileRenameOutline
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.FolderOpen
-import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.InsertDriveFile
 import androidx.compose.material.icons.filled.MoreVert
@@ -41,16 +43,25 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.ContentCut
+import androidx.compose.material.icons.outlined.FolderZip
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DockedSearchBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -62,6 +73,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -76,57 +88,80 @@ fun FileManagerScreen(
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
 
+    var showSearch by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    var showRenameDialog by remember { mutableStateOf(false) }
+    var renameTarget by remember { mutableStateOf<FileItem?>(null) }
+    var renameText by remember { mutableStateOf("") }
+    var showFileOpsSheet by remember { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = "APPDEX",
-                            style = MaterialTheme.typography.titleLarge
-                        )
-                        Text(
-                            text = state.currentPath,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
+            if (showSearch) {
+                SearchBar(
+                    query = searchQuery,
+                    onQueryChange = { searchQuery = it },
+                    onSearch = {
+                        viewModel.handleIntent(FileManagerIntent.SearchFiles(searchQuery, false))
+                    },
+                    onClose = {
+                        showSearch = false
+                        searchQuery = ""
+                        viewModel.handleIntent(FileManagerIntent.Refresh)
                     }
-                },
-                navigationIcon = {
-                    IconButton(onClick = { viewModel.handleIntent(FileManagerIntent.NavigateUp) }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Up")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { viewModel.handleIntent(FileManagerIntent.Refresh) }) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Refresh")
-                    }
-                    IconButton(onClick = { viewModel.handleIntent(FileManagerIntent.ToggleHiddenFiles) }) {
-                        Icon(
-                            if (state.showHidden) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                            contentDescription = "Toggle hidden"
-                        )
-                    }
-                    IconButton(onClick = { /* TODO: Search */ }) {
-                        Icon(Icons.Default.Search, contentDescription = "Search")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
                 )
-            )
+            } else {
+                TopAppBar(
+                    title = {
+                        Column {
+                            Text(
+                                text = "APPDEX",
+                                style = MaterialTheme.typography.titleLarge
+                            )
+                            Text(
+                                text = state.currentPath,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = { viewModel.handleIntent(FileManagerIntent.NavigateUp) }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Up")
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { viewModel.handleIntent(FileManagerIntent.Refresh) }) {
+                            Icon(Icons.Default.Refresh, contentDescription = "Refresh")
+                        }
+                        IconButton(onClick = { viewModel.handleIntent(FileManagerIntent.ToggleHiddenFiles) }) {
+                            Icon(
+                                if (state.showHidden) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                contentDescription = "Toggle hidden"
+                            )
+                        }
+                        IconButton(onClick = { showSearch = true }) {
+                            Icon(Icons.Default.Search, contentDescription = "Search")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
+                )
+            }
         },
         bottomBar = {
             AnimatedVisibility(
                 visible = state.hasSelection,
-                enter = fadeIn(),
-                exit = fadeOut()
+                enter = fadeIn() + slideInVertically { it },
+                exit = fadeOut() + slideOutVertically { it }
             ) {
                 SelectionBottomBar(
                     selectedCount = state.selectedPaths.size,
                     onDelete = { viewModel.handleIntent(FileManagerIntent.DeleteFiles(state.selectedPaths.toList())) },
+                    onMore = { showFileOpsSheet = true },
                     onClear = { viewModel.handleIntent(FileManagerIntent.ClearSelection) }
                 )
             }
@@ -143,14 +178,41 @@ fun FileManagerScreen(
                     color = MaterialTheme.colorScheme.primary
                 )
             } else if (state.error != null) {
-                Text(
-                    text = state.error!!,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.align(Alignment.Center).padding(16.dp)
+                Column(
+                    modifier = Modifier.align(Alignment.Center).padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = state.error!!,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                    Spacer(modifier = Modifier.size(8.dp))
+                    TextButton(onClick = { viewModel.handleIntent(FileManagerIntent.Refresh) }) {
+                        Text("Retry")
+                    }
+                }
+            } else if (state.isSearching) {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center),
+                    color = MaterialTheme.colorScheme.primary
                 )
             } else {
                 val filtered = if (state.showHidden) state.files else state.files.filter { !it.isHidden }
                 LazyColumn {
+                    if (filtered.isEmpty()) {
+                        item {
+                            Box(
+                                modifier = Modifier.fillMaxWidth().padding(top = 64.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = if (searchQuery.isNotEmpty()) "No results found" else "Empty directory",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
                     items(filtered) { file ->
                         FileRow(
                             file = file,
@@ -161,7 +223,14 @@ fun FileManagerScreen(
                                 } else if (file.isDirectory) {
                                     viewModel.handleIntent(FileManagerIntent.NavigateTo(file.path))
                                 } else {
-                                    openFile(context, file)
+                                    val ext = file.extension.lowercase()
+                                    if (ext in setOf("txt", "md", "json", "xml", "kt", "java", "py", "js", "ts",
+                                        "html", "css", "sh", "yaml", "yml", "c", "cpp", "h", "go", "rs", "rb", "php", "sql")) {
+                                        // Open in internal editor via effect
+                                        emitOpenEditor(context, file)
+                                    } else {
+                                        openFile(context, file)
+                                    }
                                 }
                             },
                             onLongClick = {
@@ -175,6 +244,193 @@ fun FileManagerScreen(
                 }
             }
         }
+
+        // Operation progress
+        state.operationProgress?.let { op ->
+            if (op.total > 0) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.BottomCenter
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .clip(MaterialTheme.shapes.medium)
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        CircularProgressIndicator(
+                            progress = { op.current.toFloat() / op.total },
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = "${op.type.name} ${op.current}/${op.total}",
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                            Text(
+                                text = op.currentFile,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Rename dialog
+    if (showRenameDialog && renameTarget != null) {
+        AlertDialog(
+            onDismissRequest = {
+                showRenameDialog = false
+                renameTarget = null
+            },
+            title = { Text("Rename") },
+            text = {
+                OutlinedTextField(
+                    value = renameText,
+                    onValueChange = { renameText = it },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.handleIntent(FileManagerIntent.RenameFile(renameTarget!!.path, renameText))
+                    showRenameDialog = false
+                    renameTarget = null
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showRenameDialog = false
+                    renameTarget = null
+                }) { Text("Cancel") }
+            }
+        )
+    }
+
+    // File operations bottom sheet
+    if (showFileOpsSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showFileOpsSheet = false },
+            sheetState = rememberModalBottomSheetState()
+        ) {
+            Column(modifier = Modifier.padding(bottom = 24.dp)) {
+                Text(
+                    text = "${state.selectedPaths.size} items selected",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+                )
+                HorizontalDivider()
+                FileOpItem(
+                    icon = Icons.Outlined.ContentCopy,
+                    title = "Copy to...",
+                    onClick = {
+                        showFileOpsSheet = false
+                        // TODO: Show directory picker
+                    }
+                )
+                FileOpItem(
+                    icon = Icons.Outlined.ContentCut,
+                    title = "Move to...",
+                    onClick = {
+                        showFileOpsSheet = false
+                        // TODO: Show directory picker
+                    }
+                )
+                FileOpItem(
+                    icon = Icons.Outlined.FolderZip,
+                    title = "Compress (ZIP)",
+                    onClick = {
+                        val target = "${state.currentPath}/archive_${System.currentTimeMillis()}.zip"
+                        viewModel.handleIntent(FileManagerIntent.CompressFiles(state.selectedPaths.toList(), target))
+                        showFileOpsSheet = false
+                    }
+                )
+                FileOpItem(
+                    icon = Icons.Default.DriveFileRenameOutline,
+                    title = "Rename",
+                    onClick = {
+                        val first = state.selectedPaths.firstOrNull()
+                        if (first != null && state.selectedPaths.size == 1) {
+                            renameTarget = state.files.find { it.path == first }
+                            renameText = renameTarget?.name ?: ""
+                            showRenameDialog = true
+                        }
+                        showFileOpsSheet = false
+                    }
+                )
+                FileOpItem(
+                    icon = Icons.Default.Delete,
+                    title = "Delete",
+                    tint = MaterialTheme.colorScheme.error,
+                    onClick = {
+                        viewModel.handleIntent(FileManagerIntent.DeleteFiles(state.selectedPaths.toList()))
+                        showFileOpsSheet = false
+                    }
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onSearch: () -> Unit,
+    onClose: () -> Unit
+) {
+    DockedSearchBar(
+        inputField = {
+            androidx.compose.material3.SearchBarDefaults.InputField(
+                query = query,
+                onQueryChange = onQueryChange,
+                onSearch = { onSearch() },
+                expanded = false,
+                onExpandedChange = {},
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                trailingIcon = {
+                    IconButton(onClick = onClose) {
+                        Icon(Icons.Default.Close, contentDescription = "Close")
+                    }
+                },
+                placeholder = { Text("Search files...") }
+            )
+        },
+        expanded = false,
+        onExpandedChange = {},
+        modifier = Modifier.fillMaxWidth().padding(8.dp)
+    ) {}
+}
+
+@Composable
+private fun FileOpItem(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    tint: Color = MaterialTheme.colorScheme.onSurface,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 24.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(24.dp))
+        Spacer(modifier = Modifier.width(16.dp))
+        Text(title, style = MaterialTheme.typography.bodyLarge, color = tint)
     }
 }
 
@@ -192,7 +448,6 @@ private fun FileRow(
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Selection indicator or file icon
         if (isSelected) {
             Box(
                 modifier = Modifier
@@ -260,6 +515,7 @@ private fun FileRow(
 private fun SelectionBottomBar(
     selectedCount: Int,
     onDelete: () -> Unit,
+    onMore: () -> Unit,
     onClear: () -> Unit
 ) {
     Row(
@@ -276,6 +532,9 @@ private fun SelectionBottomBar(
             color = MaterialTheme.colorScheme.onSurface
         )
         Row {
+            IconButton(onClick = onMore) {
+                Icon(Icons.Default.MoreVert, contentDescription = "More")
+            }
             IconButton(onClick = onDelete) {
                 Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
             }
@@ -313,6 +572,11 @@ private fun getIconTint(file: FileItem): Color {
         ext in setOf("zip", "rar", "7z", "tar", "gz") -> MaterialTheme.colorScheme.primary
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
+}
+
+private fun emitOpenEditor(context: android.content.Context, file: FileItem) {
+    // For now, open with external text editor
+    openFile(context, file)
 }
 
 private fun openFile(context: android.content.Context, file: FileItem) {
