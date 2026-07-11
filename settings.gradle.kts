@@ -39,6 +39,8 @@ include(":feature:feature-editor")
 include(":feature:feature-analyzer")
 include(":feature:feature-settings")
 include(":feature:feature-player")
+include(":feature:feature-terminal")
+include(":feature:feature-tools")
 
 // ── Library ──
 include(":library:lib-syntax")

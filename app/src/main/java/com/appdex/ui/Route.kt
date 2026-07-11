@@ -13,5 +13,11 @@ sealed interface Route {
     data object Analyzer : Route
 
     @Serializable
+    data object Terminal : Route
+
+    @Serializable
+    data object Tools : Route
+
+    @Serializable
     data object Settings : Route
 }

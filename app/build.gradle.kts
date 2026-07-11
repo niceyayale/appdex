@@ -69,6 +69,8 @@ dependencies {
     implementation(project(":feature:feature-analyzer"))
     implementation(project(":feature:feature-settings"))
     implementation(project(":feature:feature-player"))
+    implementation(project(":feature:feature-terminal"))
+    implementation(project(":feature:feature-tools"))
 
     // ── AndroidX ──
     implementation(libs.androidx.core.ktx)

@@ -3,9 +3,11 @@ package com.appdex.nav
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Analytics
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -32,6 +34,8 @@ import com.appdex.player.audio.AudioPlayerScreen
 import com.appdex.player.image.ImageViewerScreen
 import com.appdex.player.video.VideoPlayerScreen
 import com.appdex.settings.SettingsScreen
+import com.appdex.terminal.TerminalScreen
+import com.appdex.tools.ToolsScreen
 import com.appdex.ui.Route
 import kotlinx.coroutines.flow.collectLatest
 
@@ -48,7 +52,9 @@ fun AppDexApp() {
     val items = listOf(
         BottomNavItem(Route.Files, "Files", Icons.Default.Folder),
         BottomNavItem(Route.Editor, "Editor", Icons.Default.Code),
-        BottomNavItem(Route.Analyzer, "Analyzer", Icons.Default.Analytics),
+        BottomNavItem(Route.Analyzer, "APK", Icons.Default.Analytics),
+        BottomNavItem(Route.Terminal, "Terminal", Icons.Default.Terminal),
+        BottomNavItem(Route.Tools, "Tools", Icons.Default.Build),
         BottomNavItem(Route.Settings, "Settings", Icons.Default.Settings)
     )
 
@@ -98,6 +104,12 @@ fun AppDexApp() {
             composable<Route.Analyzer> {
                 ApkAnalyzerScreen()
             }
+            composable<Route.Terminal> {
+                TerminalScreen()
+            }
+            composable<Route.Tools> {
+                ToolsScreen()
+            }
             composable<Route.Settings> {
                 SettingsScreen()
             }
@@ -128,8 +140,6 @@ fun AppDexApp() {
                 )
             }
             is MediaOpenRequest.Apk -> {
-                // For now, open APK analyzer with this file
-                // Could also show an APK info dialog
                 mediaRequest = null
             }
         }
