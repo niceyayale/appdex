@@ -26,7 +26,17 @@ class ApkFile(private val filePath: String) : Closeable {
 
     private fun getManifest(): ApkManifest {
         manifest?.let { return it }
-        // TODO: Implement binary XML decoding for AndroidManifest.xml
+        try {
+            val entry = zipFile.getEntry("AndroidManifest.xml")
+            if (entry != null) {
+                val bytes = zipFile.getInputStream(entry).use { it.readBytes() }
+                val xml = BinaryXmlDecoder(bytes).decode()
+                val parsed = parseManifestXml(xml)
+                manifest = parsed
+                return parsed
+            }
+        } catch (_: Exception) { }
+
         val placeholder = ApkManifest(
             packageName = "",
             versionName = "",
@@ -42,6 +52,85 @@ class ApkFile(private val filePath: String) : Closeable {
         )
         manifest = placeholder
         return placeholder
+    }
+
+    private fun parseManifestXml(xml: String): ApkManifest {
+        val packageName = extractAttr(xml, "<manifest", "package") ?: ""
+        val versionName = extractAttr(xml, "<manifest", "android:versionName") ?: ""
+        val versionCodeStr = extractAttr(xml, "<manifest", "android:versionCode") ?: "0"
+        val versionCode = versionCodeStr.toLongOrNull() ?: 0L
+
+        val usesSdk = extractAttr(xml, "<uses-sdk", "android:minSdkVersion")
+        val minSdk = usesSdk?.toIntOrNull() ?: 1
+        val targetSdkStr = extractAttr(xml, "<uses-sdk", "android:targetSdkVersion")
+        val targetSdk = targetSdkStr?.toIntOrNull() ?: minSdk
+
+        val permissions = extractAllAttrs(xml, "<uses-permission", "android:name")
+        val activities = extractAllAttrs(xml, "<activity", "android:name")
+        val services = extractAllAttrs(xml, "<service", "android:name")
+        val receivers = extractAllAttrs(xml, "<receiver", "android:name")
+        val providers = extractAllAttrs(xml, "<provider", "android:name")
+
+        return ApkManifest(
+            packageName = packageName,
+            versionName = versionName,
+            versionCode = versionCode,
+            minSdk = minSdk,
+            targetSdk = targetSdk,
+            permissions = permissions,
+            activities = activities,
+            services = services,
+            receivers = receivers,
+            providers = providers,
+            metaData = emptyMap()
+        )
+    }
+
+    private fun extractAttr(xml: String, tagPrefix: String, attrName: String): String? {
+        val tagIdx = xml.indexOf(tagPrefix)
+        if (tagIdx < 0) return null
+        val tagEnd = xml.indexOf('>', tagIdx)
+        if (tagEnd < 0) return null
+        val tagContent = xml.substring(tagIdx, tagEnd)
+
+        val attrIdx = tagContent.indexOf(attrName)
+        if (attrIdx < 0) return null
+        val eqIdx = tagContent.indexOf('=', attrIdx)
+        if (eqIdx < 0) return null
+        val quoteIdx = tagContent.indexOf('"', eqIdx)
+        if (quoteIdx < 0) return null
+        val endQuoteIdx = tagContent.indexOf('"', quoteIdx + 1)
+        if (endQuoteIdx < 0) return null
+
+        return tagContent.substring(quoteIdx + 1, endQuoteIdx)
+    }
+
+    private fun extractAllAttrs(xml: String, tagPrefix: String, attrName: String): List<String> {
+        val results = mutableListOf<String>()
+        var searchFrom = 0
+        while (true) {
+            val tagIdx = xml.indexOf(tagPrefix, searchFrom)
+            if (tagIdx < 0) break
+            val tagEnd = xml.indexOf('>', tagIdx)
+            if (tagEnd < 0) break
+            val tagContent = xml.substring(tagIdx, tagEnd)
+
+            val attrIdx = tagContent.indexOf(attrName)
+            if (attrIdx >= 0) {
+                val eqIdx = tagContent.indexOf('=', attrIdx)
+                if (eqIdx >= 0) {
+                    val quoteIdx = tagContent.indexOf('"', eqIdx)
+                    if (quoteIdx >= 0) {
+                        val endQuoteIdx = tagContent.indexOf('"', quoteIdx + 1)
+                        if (endQuoteIdx >= 0) {
+                            results.add(tagContent.substring(quoteIdx + 1, endQuoteIdx))
+                        }
+                    }
+                }
+            }
+            searchFrom = tagEnd + 1
+        }
+        return results
     }
 
     private fun getSignatures(): List<ApkSignature> {

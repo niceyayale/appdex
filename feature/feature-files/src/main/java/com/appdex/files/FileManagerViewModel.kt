@@ -4,11 +4,14 @@ import android.os.Environment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.appdex.arch.BaseViewModel
+import com.appdex.data.BookmarkRepository
+import com.appdex.db.BookmarkEntity
 import com.appdex.model.FileItem
 import com.appdex.model.FileOperation
 import com.appdex.model.FileOperationType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -20,12 +23,23 @@ import java.util.zip.ZipOutputStream
 import javax.inject.Inject
 
 @HiltViewModel
-class FileManagerViewModel @Inject constructor() : BaseViewModel<FileManagerIntent, FileManagerState, FileManagerEffect>(
+class FileManagerViewModel @Inject constructor(
+    private val bookmarkRepository: BookmarkRepository
+) : BaseViewModel<FileManagerIntent, FileManagerState, FileManagerEffect>(
     initialState = FileManagerState()
 ) {
 
     init {
         handleIntent(FileManagerIntent.NavigateTo(currentState.currentPath))
+        observeBookmarks()
+    }
+
+    private fun observeBookmarks() {
+        viewModelScope.launch {
+            bookmarkRepository.observeAll().collectLatest { bookmarks ->
+                update { it.copy(bookmarks = bookmarks.map { b -> com.appdex.model.Bookmark(b.id, b.name, b.path, b.iconKey) }) }
+            }
+        }
     }
 
     override fun handleIntent(intent: FileManagerIntent) {
@@ -43,6 +57,8 @@ class FileManagerViewModel @Inject constructor() : BaseViewModel<FileManagerInte
             is FileManagerIntent.MoveFiles -> moveFiles(intent.sources, intent.target)
             is FileManagerIntent.CompressFiles -> compressFiles(intent.paths, intent.target)
             is FileManagerIntent.ExtractArchive -> extractArchive(intent.path, intent.target)
+            is FileManagerIntent.AddBookmark -> addBookmark(intent.name, intent.path)
+            is FileManagerIntent.RemoveBookmark -> removeBookmark(intent.path)
         }
     }
 
@@ -318,6 +334,20 @@ class FileManagerViewModel @Inject constructor() : BaseViewModel<FileManagerInte
                 update { it.copy(operationProgress = null) }
                 emitEffect(FileManagerEffect.Error("Extract failed: ${e.message}"))
             }
+        }
+    }
+
+    private fun addBookmark(name: String, path: String) {
+        viewModelScope.launch {
+            bookmarkRepository.add(name, path)
+            emitEffect(FileManagerEffect.ShowToast("Bookmark added"))
+        }
+    }
+
+    private fun removeBookmark(path: String) {
+        viewModelScope.launch {
+            bookmarkRepository.remove(path)
+            emitEffect(FileManagerEffect.ShowToast("Bookmark removed"))
         }
     }
 }

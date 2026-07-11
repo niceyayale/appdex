@@ -169,6 +169,70 @@ fun ApkAnalyzerScreen(
                     }
                 }
 
+                // Activities
+                if (info.manifest.activities.isNotEmpty()) {
+                    item {
+                        InfoCard(title = "Activities (${info.manifest.activities.size})") {
+                            info.manifest.activities.forEach { act ->
+                                Text(
+                                    text = "• $act",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(start = 8.dp, top = 2.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Services
+                if (info.manifest.services.isNotEmpty()) {
+                    item {
+                        InfoCard(title = "Services (${info.manifest.services.size})") {
+                            info.manifest.services.forEach { svc ->
+                                Text(
+                                    text = "• $svc",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(start = 8.dp, top = 2.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Receivers
+                if (info.manifest.receivers.isNotEmpty()) {
+                    item {
+                        InfoCard(title = "Receivers (${info.manifest.receivers.size})") {
+                            info.manifest.receivers.forEach { rcv ->
+                                Text(
+                                    text = "• $rcv",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(start = 8.dp, top = 2.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Providers
+                if (info.manifest.providers.isNotEmpty()) {
+                    item {
+                        InfoCard(title = "Providers (${info.manifest.providers.size})") {
+                            info.manifest.providers.forEach { prov ->
+                                Text(
+                                    text = "• $prov",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(start = 8.dp, top = 2.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
                 // Entries
                 item {
                     Text(

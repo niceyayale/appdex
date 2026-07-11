@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -33,6 +34,9 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.DriveFileRenameOutline
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.BookmarkBorder
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.InsertDriveFile
@@ -77,6 +81,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import java.io.File
 import com.appdex.common.FormatUtil
 import com.appdex.model.FileItem
 
@@ -94,6 +99,8 @@ fun FileManagerScreen(
     var renameTarget by remember { mutableStateOf<FileItem?>(null) }
     var renameText by remember { mutableStateOf("") }
     var showFileOpsSheet by remember { mutableStateOf(false) }
+    var showDirPicker by remember { mutableStateOf(false) }
+    var dirPickerAction by remember { mutableStateOf<DirPickerAction?>(null) }
 
     Scaffold(
         topBar = {
@@ -133,6 +140,20 @@ fun FileManagerScreen(
                         }
                     },
                     actions = {
+                        val isBookmarked = state.bookmarks.any { it.path == state.currentPath }
+                        IconButton(onClick = {
+                            if (isBookmarked) {
+                                viewModel.handleIntent(FileManagerIntent.RemoveBookmark(state.currentPath))
+                            } else {
+                                val name = File(state.currentPath).name.ifEmpty { state.currentPath }
+                                viewModel.handleIntent(FileManagerIntent.AddBookmark(name, state.currentPath))
+                            }
+                        }) {
+                            Icon(
+                                if (isBookmarked) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
+                                contentDescription = "Bookmark"
+                            )
+                        }
                         IconButton(onClick = { viewModel.handleIntent(FileManagerIntent.Refresh) }) {
                             Icon(Icons.Default.Refresh, contentDescription = "Refresh")
                         }
@@ -175,7 +196,7 @@ fun FileManagerScreen(
             if (state.isLoading) {
                 CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center),
-                    color = MaterialTheme.colorScheme.primary
+                    strokeWidth = 2.dp
                 )
             } else if (state.error != null) {
                 Column(
@@ -191,14 +212,30 @@ fun FileManagerScreen(
                         Text("Retry")
                     }
                 }
-            } else if (state.isSearching) {
-                CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center),
-                    color = MaterialTheme.colorScheme.primary
-                )
             } else {
-                val filtered = if (state.showHidden) state.files else state.files.filter { !it.isHidden }
-                LazyColumn {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    // Bookmarks bar
+                    if (state.bookmarks.isNotEmpty()) {
+                        LazyRow(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(state.bookmarks) { bookmark ->
+                                BookmarkChip(
+                                    name = bookmark.name,
+                                    onClick = { viewModel.handleIntent(FileManagerIntent.NavigateTo(bookmark.path)) },
+                                    onRemove = { viewModel.handleIntent(FileManagerIntent.RemoveBookmark(bookmark.path)) }
+                                )
+                            }
+                        }
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                    }
+
+                    // File list
+                    val filtered = if (state.showHidden) state.files else state.files.filter { !it.isHidden }
+                    LazyColumn(modifier = Modifier.weight(1f)) {
                     if (filtered.isEmpty()) {
                         item {
                             Box(
@@ -242,8 +279,9 @@ fun FileManagerScreen(
                         )
                     }
                 }
+                    }
+                }
             }
-        }
 
         // Operation progress
         state.operationProgress?.let { op ->
@@ -336,7 +374,8 @@ fun FileManagerScreen(
                     title = "Copy to...",
                     onClick = {
                         showFileOpsSheet = false
-                        // TODO: Show directory picker
+                        dirPickerAction = DirPickerAction.COPY
+                        showDirPicker = true
                     }
                 )
                 FileOpItem(
@@ -344,7 +383,8 @@ fun FileManagerScreen(
                     title = "Move to...",
                     onClick = {
                         showFileOpsSheet = false
-                        // TODO: Show directory picker
+                        dirPickerAction = DirPickerAction.MOVE
+                        showDirPicker = true
                     }
                 )
                 FileOpItem(
@@ -381,7 +421,35 @@ fun FileManagerScreen(
             }
         }
     }
+
+    // Directory picker dialog
+    if (showDirPicker) {
+        DirectoryPickerDialog(
+            title = when (dirPickerAction) {
+                DirPickerAction.COPY -> "Copy to..."
+                DirPickerAction.MOVE -> "Move to..."
+                null -> "Select directory"
+            },
+            initialPath = state.currentPath,
+            onConfirm = { target ->
+                val sources = state.selectedPaths.toList()
+                when (dirPickerAction) {
+                    DirPickerAction.COPY -> viewModel.handleIntent(FileManagerIntent.CopyFiles(sources, target))
+                    DirPickerAction.MOVE -> viewModel.handleIntent(FileManagerIntent.MoveFiles(sources, target))
+                    null -> {}
+                }
+                showDirPicker = false
+                dirPickerAction = null
+            },
+            onDismiss = {
+                showDirPicker = false
+                dirPickerAction = null
+            }
+        )
+    }
 }
+
+enum class DirPickerAction { COPY, MOVE }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -619,4 +687,43 @@ private fun getMimeType(file: FileItem): String {
         "zip" -> "application/zip"
         else -> "*/*"
     }
+}
+
+@Composable
+private fun BookmarkChip(
+    name: String,
+    onClick: () -> Unit,
+    onRemove: () -> Unit
+) {
+    androidx.compose.material3.AssistChip(
+        onClick = onClick,
+        label = {
+            Text(
+                text = name,
+                style = MaterialTheme.typography.labelMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        },
+        leadingIcon = {
+            Icon(
+                Icons.Default.Bookmark,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+        },
+        trailingIcon = {
+            IconButton(
+                onClick = onRemove,
+                modifier = Modifier.size(20.dp)
+            ) {
+                Icon(
+                    Icons.Default.Close,
+                    contentDescription = "Remove bookmark",
+                    modifier = Modifier.size(14.dp)
+                )
+            }
+        }
+    )
 }

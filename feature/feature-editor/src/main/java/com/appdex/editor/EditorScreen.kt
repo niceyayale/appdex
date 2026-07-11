@@ -1,22 +1,26 @@
 package com.appdex.editor
 
 import android.widget.Toast
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.FolderOpen
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -25,14 +29,19 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -46,12 +55,16 @@ fun EditorScreen(
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
 
-    val highlightedText by remember(state.content, state.filePath) {
-        derivedStateOf {
-            val ext = state.filePath?.substringAfterLast('.', "") ?: ""
-            SyntaxHighlighter.highlight(state.content, ext)
-        }
+    var textFieldValue by remember { mutableStateOf(TextFieldValue("")) }
+
+    // Sync content into TextFieldValue when it changes externally (e.g. file open)
+    val currentContent = state.content
+    if (textFieldValue.text != currentContent) {
+        textFieldValue = TextFieldValue(currentContent)
     }
+
+    val ext = state.filePath?.substringAfterLast('.', "") ?: ""
+    val highlightTransform = remember(ext) { SyntaxHighlightTransformation(ext) }
 
     Scaffold(
         topBar = {
@@ -117,38 +130,59 @@ fun EditorScreen(
             Column(
                 modifier = Modifier.fillMaxSize().padding(padding)
             ) {
-                // Syntax highlighted text editor
+                // Code editor with syntax highlighting
                 Box(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(8.dp)
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(horizontal = 4.dp)
                 ) {
-                    BasicTextField(
-                        value = state.content,
-                        onValueChange = { newText ->
-                            viewModel.handleIntent(EditorIntent.UpdateContent(newText))
-                        },
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(androidx.compose.foundation.rememberScrollState()),
-                        textStyle = TextStyle(
-                            fontFamily = FontFamily.Monospace,
-                            fontSize = 14.sp,
-                            color = MaterialTheme.colorScheme.onSurface
-                        ),
-                        cursorBrush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.primary)
-                    )
+                    Row(modifier = Modifier.fillMaxSize()) {
+                        // Line numbers
+                        LineNumberColumn(
+                            text = state.content,
+                            modifier = Modifier
+                                .width(48.dp)
+                                .fillMaxSize()
+                                .verticalScroll(rememberScrollState())
+                                .padding(top = 8.dp, end = 8.dp)
+                        )
 
-                    // Overlay with syntax highlighting (non-interactive)
-                    // Note: BasicTextField doesn't support AnnotatedString directly for editing
-                    // This is a simplified approach - the highlighted text is shown as a visual guide
+                        // Editor
+                        BasicTextField(
+                            value = textFieldValue,
+                            onValueChange = { newValue ->
+                                textFieldValue = newValue
+                                viewModel.handleIntent(EditorIntent.UpdateContent(newValue.text))
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxSize()
+                                .verticalScroll(rememberScrollState()),
+                            textStyle = TextStyle(
+                                fontFamily = FontFamily.Monospace,
+                                fontSize = 14.sp,
+                                lineHeight = 20.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            ),
+                            visualTransformation = highlightTransform,
+                            cursorBrush = androidx.compose.ui.graphics.SolidColor(
+                                MaterialTheme.colorScheme.primary
+                            ),
+                            keyboardOptions = KeyboardOptions.Default.copy(
+                                imeAction = androidx.compose.ui.text.input.ImeAction.None
+                            )
+                        )
+                    }
                 }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
 
                 // Status bar
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                        .padding(horizontal = 16.dp, vertical = 6.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
@@ -168,7 +202,7 @@ fun EditorScreen(
                         text = state.error!!,
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(horizontal = 16.dp)
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
                     )
                 }
             }
@@ -176,6 +210,41 @@ fun EditorScreen(
     }
 }
 
+@Composable
+private fun LineNumberColumn(
+    text: String,
+    modifier: Modifier = Modifier
+) {
+    val lineCount = remember(text) { getLineCount(text) }
+    Column(modifier = modifier) {
+        for (i in 1..lineCount) {
+            Text(
+                text = "$i",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                fontFamily = FontFamily.Monospace
+            )
+        }
+    }
+}
+
 private fun getLineCount(text: String): Int {
     return text.count { it == '\n' } + 1
+}
+
+/**
+ * VisualTransformation that applies syntax highlighting to the text.
+ */
+class SyntaxHighlightTransformation(
+    private val extension: String
+) : VisualTransformation {
+    override fun filter(text: androidx.compose.ui.text.AnnotatedString): TransformedText {
+        val highlighted = SyntaxHighlighter.highlight(text.text, extension)
+        return TransformedText(highlighted, OffsetMapping)
+    }
+}
+
+object OffsetMapping : androidx.compose.ui.text.input.OffsetMapping {
+    override fun originalToTransformed(offset: Int): Int = offset
+    override fun transformedToOriginal(offset: Int): Int = offset
 }

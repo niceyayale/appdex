@@ -12,6 +12,8 @@ sealed interface FileManagerIntent : MviIntent {
     data class SearchFiles(val query: String, val regex: Boolean) : FileManagerIntent
     data class CompressFiles(val paths: List<String>, val target: String) : FileManagerIntent
     data class ExtractArchive(val path: String, val target: String) : FileManagerIntent
+    data class AddBookmark(val name: String, val path: String) : FileManagerIntent
+    data class RemoveBookmark(val path: String) : FileManagerIntent
     data object Refresh : FileManagerIntent
     data object ToggleHiddenFiles : FileManagerIntent
     data object ClearSelection : FileManagerIntent
