@@ -1,28 +1,25 @@
 package com.appdex.tools
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Build
-import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Devices
+import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.TextFields
-import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -37,11 +34,29 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.appdex.plugin.PluginEntry
+import com.appdex.plugin.PluginManager
+import com.appdex.tools.plugins.JsonFormatterPlugin
+import com.appdex.tools.plugins.PluginListScreen
+import com.appdex.tools.plugins.TextStatsPlugin
+import com.appdex.tools.plugins.TimestampConverterPlugin
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ToolsScreen() {
     var selectedTool by remember { mutableStateOf<ToolType?>(null) }
+    var selectedPlugin by remember { mutableStateOf<PluginEntry?>(null) }
+    var showPluginList by remember { mutableStateOf(false) }
+
+    // Register built-in plugins on first launch
+    remember {
+        if (PluginManager.count == 0) {
+            PluginManager.register(JsonFormatterPlugin())
+            PluginManager.register(TextStatsPlugin())
+            PluginManager.register(TimestampConverterPlugin())
+        }
+        true
+    }
 
     Scaffold(
         topBar = {
@@ -55,26 +70,52 @@ fun ToolsScreen() {
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            selectedTool?.let { tool ->
-                when (tool) {
-                    ToolType.HASH_CALCULATOR -> HashCalculatorScreen(onBack = { selectedTool = null })
-                    ToolType.DEVICE_INFO -> DeviceInfoScreen(onBack = { selectedTool = null })
-                    ToolType.ENCODING_CONVERTER -> EncodingConverterScreen(onBack = { selectedTool = null })
+            when {
+                showPluginList -> {
+                    PluginListScreen(
+                        onBack = { showPluginList = false },
+                        onPluginClick = { entry ->
+                            selectedPlugin = entry
+                            showPluginList = false
+                        }
+                    )
                 }
-            } ?: run {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(ToolType.entries) { tool ->
-                        ToolCard(
-                            tool = tool,
-                            onClick = { selectedTool = tool }
-                        )
+                selectedPlugin != null -> {
+                    PluginDetailScreen(
+                        entry = selectedPlugin!!,
+                        onBack = { selectedPlugin = null }
+                    )
+                }
+                selectedTool != null -> {
+                    when (selectedTool) {
+                        ToolType.HASH_CALCULATOR -> HashCalculatorScreen(onBack = { selectedTool = null })
+                        ToolType.DEVICE_INFO -> DeviceInfoScreen(onBack = { selectedTool = null })
+                        ToolType.ENCODING_CONVERTER -> EncodingConverterScreen(onBack = { selectedTool = null })
+                        null -> {}
+                    }
+                }
+                else -> {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp),
+                        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(ToolType.entries) { tool ->
+                            ToolCard(
+                                tool = tool,
+                                onClick = { selectedTool = tool }
+                            )
+                        }
+                        // Plugins entry
+                        item {
+                            PluginEntryCard(
+                                count = PluginManager.count,
+                                onClick = { showPluginList = true }
+                            )
+                        }
                     }
                 }
             }
@@ -117,12 +158,12 @@ private fun ToolCard(
         ),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Column(
+        androidx.compose.foundation.layout.Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
         ) {
             Icon(
                 imageVector = tool.icon,
@@ -142,6 +183,74 @@ private fun ToolCard(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
+        }
+    }
+}
+
+@Composable
+private fun PluginEntryCard(
+    count: Int,
+    onClick: () -> Unit
+) {
+    Card(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+        ),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        androidx.compose.foundation.layout.Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Extension,
+                contentDescription = null,
+                modifier = Modifier.size(40.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                text = "Plugins",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = "$count plugins available",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PluginDetailScreen(
+    entry: PluginEntry,
+    onBack: () -> Unit
+) {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(entry.plugin.name) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                }
+            )
+        }
+    ) { padding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            entry.plugin.Content()
         }
     }
 }

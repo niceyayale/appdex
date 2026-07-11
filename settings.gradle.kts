@@ -32,6 +32,7 @@ include(":core:core-data")
 include(":core:core-database")
 include(":core:core-model")
 include(":core:core-common")
+include(":core:core-plugin")
 
 // ── Feature ──
 include(":feature:feature-files")

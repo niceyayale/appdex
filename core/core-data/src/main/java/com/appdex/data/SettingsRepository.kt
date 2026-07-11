@@ -18,6 +18,7 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 enum class DensityMode { COMPACT, STANDARD, COMFORTABLE }
+enum class LanguageMode { ENGLISH, CHINESE, SYSTEM }
 
 @Singleton
 class SettingsRepository @Inject constructor(
@@ -52,6 +53,17 @@ class SettingsRepository @Inject constructor(
     val defaultEncoding: Flow<String> = dataStore.data
         .map { it[KEY_ENCODING] ?: "UTF-8" }
 
+    // ── Language ──
+    val languageMode: Flow<LanguageMode> = dataStore.data
+        .map { LanguageMode.entries.getOrNull(it[KEY_LANGUAGE] ?: 2) ?: LanguageMode.SYSTEM }
+
+    // ── Terminal ──
+    val terminalFontSize: Flow<Int> = dataStore.data
+        .map { it[KEY_TERM_FONT_SIZE] ?: 13 }
+
+    val terminalScrollback: Flow<Int> = dataStore.data
+        .map { it[KEY_TERM_SCROLLBACK] ?: 1000 }
+
     // ── Writers ──
     suspend fun setThemeMode(mode: ThemeMode) {
         dataStore.edit { it[KEY_THEME] = mode.ordinal }
@@ -85,6 +97,18 @@ class SettingsRepository @Inject constructor(
         dataStore.edit { it[KEY_ENCODING] = encoding }
     }
 
+    suspend fun setLanguageMode(mode: LanguageMode) {
+        dataStore.edit { it[KEY_LANGUAGE] = mode.ordinal }
+    }
+
+    suspend fun setTerminalFontSize(size: Int) {
+        dataStore.edit { it[KEY_TERM_FONT_SIZE] = size }
+    }
+
+    suspend fun setTerminalScrollback(lines: Int) {
+        dataStore.edit { it[KEY_TERM_SCROLLBACK] = lines }
+    }
+
     companion object {
         private val KEY_THEME = intPreferencesKey("theme_mode")
         private val KEY_DENSITY = intPreferencesKey("density_mode")
@@ -94,5 +118,8 @@ class SettingsRepository @Inject constructor(
         private val KEY_FONT_SIZE = intPreferencesKey("font_size")
         private val KEY_TAB_WIDTH = intPreferencesKey("tab_width")
         private val KEY_ENCODING = stringPreferencesKey("encoding")
+        private val KEY_LANGUAGE = intPreferencesKey("language_mode")
+        private val KEY_TERM_FONT_SIZE = intPreferencesKey("term_font_size")
+        private val KEY_TERM_SCROLLBACK = intPreferencesKey("term_scrollback")
     }
 }
