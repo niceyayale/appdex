@@ -194,8 +194,6 @@ class ApkFile(private val filePath: String) : Closeable {
     private fun parseV2Signature(): List<ApkSignature> {
         val result = mutableListOf<ApkSignature>()
         try {
-            // Read the APK Signing Block from the end of the ZIP file
-            // The APK Signing Block is located before the Central Directory
             val file = File(filePath)
             val raf = java.io.RandomAccessFile(file, "r")
             val fileLength = raf.length()
@@ -206,49 +204,150 @@ class ApkFile(private val filePath: String) : Closeable {
             raf.seek(fileLength - eocdSearchSize)
             raf.readFully(eocdBuffer)
 
-            var eocdOffset = -1
+            var eocdOffset = -1L
             for (i in eocdBuffer.size - 22 downTo 0) {
                 if (eocdBuffer[i] == 0x50.toByte() && eocdBuffer[i + 1] == 0x4b.toByte() &&
                     eocdBuffer[i + 2] == 0x05.toByte() && eocdBuffer[i + 3] == 0x06.toByte()) {
-                    eocdOffset = i
+                    eocdOffset = (fileLength - eocdSearchSize + i).toInt().toLong()
                     break
                 }
             }
 
-            if (eocdOffset >= 0) {
-                // Central Directory offset
-                val cdOffset = (eocdBuffer[eocdOffset + 16].toInt() and 0xFF) or
-                    ((eocdBuffer[eocdOffset + 17].toInt() and 0xFF) shl 8) or
-                    ((eocdBuffer[eocdOffset + 18].toInt() and 0xFF) shl 16) or
-                    ((eocdBuffer[eocdOffset + 19].toInt() and 0xFF) shl 24)
-
-                // Check for APK Signing Block magic before CD
-                val magicOffset = cdOffset - 16
-                if (magicOffset > 0) {
-                    raf.seek(magicOffset.toLong())
-                    val magic = ByteArray(16)
-                    raf.readFully(magic)
-                    val expected = "APK Sig Block 42".toByteArray()
-                    if (magic.contentEquals(expected)) {
-                        // Read block size
-                        raf.seek((cdOffset - 24).toLong())
-                        val blockSize = raf.readLong()
-                        if (blockSize > 0 && cdOffset.toLong() - 8 - blockSize >= 0) {
-                            // Parse signers
-                            raf.seek(cdOffset.toLong() - 8 - blockSize)
-                            // Skip to v2 block (ID = 0x7109871a)
-                            // Simplified: just mark that v2 exists
-                            // Full parsing requires complex binary reading
-                            // For now, return empty - will be enriched by PackageManager
-                        }
-                    }
-                }
+            if (eocdOffset < 0) {
+                raf.close()
+                return result
             }
 
+            // Central Directory offset from EOCD
+            raf.seek(eocdOffset + 16)
+            val cdOffset = java.nio.ByteBuffer.allocate(4).order(java.nio.ByteOrder.LITTLE_ENDIAN).apply {
+                raf.readFully(array())
+            }.int.toLong() and 0xFFFFFFFFL
+
+            // Check for APK Signing Block magic before CD
+            val magicOffset = cdOffset - 16
+            if (magicOffset <= 0) {
+                raf.close()
+                return result
+            }
+
+            raf.seek(magicOffset)
+            val magic = ByteArray(16)
+            raf.readFully(magic)
+            if (!magic.contentEquals("APK Sig Block 42".toByteArray())) {
+                raf.close()
+                return result
+            }
+
+            // Read block size
+            raf.seek(cdOffset - 24)
+            val blockSizeBuf = ByteArray(8)
+            raf.readFully(blockSizeBuf)
+            val blockSize = java.nio.ByteBuffer.wrap(blockSizeBuf).order(java.nio.ByteOrder.LITTLE_ENDIAN).long
+
+            if (blockSize <= 0 || cdOffset - 8 - blockSize < 0) {
+                raf.close()
+                return result
+            }
+
+            // Read the entire signing block
+            val blockStart = cdOffset - 8 - blockSize
+            raf.seek(blockStart)
+            val blockData = ByteArray(blockSize.toInt() - 8) // minus the trailing size+magic... actually blockSize includes up to the first size field
+            // Actually: the block layout is:
+            // [size of block (8 bytes)] [ID-value pairs...] [size of block (8 bytes)] [magic (16 bytes)]
+            // blockSize is the size from after first 8 bytes to end (including second size + magic)
+            // So total block = 8 + blockSize
+            // ID-value pairs start at blockStart + 8
+
+            raf.seek(blockStart + 8)
+            val pairsData = ByteArray(blockSize.toInt() - 24) // blockSize - 8 (trailing size) - 16 (magic)
+            raf.readFully(pairsData)
+
             raf.close()
+
+            // Parse ID-value pairs
+            val bb = java.nio.ByteBuffer.wrap(pairsData).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+            while (bb.remaining() >= 8) {
+                val pairLength = bb.long.toInt()
+                if (pairLength <= 0 || pairLength > bb.remaining()) break
+
+                val pairStart = bb.position()
+                val pairId = bb.int
+
+                when (pairId) {
+                    0x7109871a -> {
+                        // V2 signature
+                        val v2Sigs = parseV2SignerBlock(bb, pairStart, pairLength.toInt())
+                        result.addAll(v2Sigs)
+                    }
+                    0xf05368c0.toInt() -> {
+                        // V3 signature - same structure for our purposes
+                        val v3Sigs = parseV2SignerBlock(bb, pairStart, pairLength.toInt(), version = 3)
+                        result.addAll(v3Sigs)
+                    }
+                }
+
+                // Move to next pair
+                bb.position(pairStart + pairLength.toInt())
+            }
+
         } catch (_: Exception) { }
 
         return result
+    }
+
+    private fun parseV2SignerBlock(
+        bb: java.nio.ByteBuffer,
+        pairStart: Int,
+        pairLength: Int,
+        version: Int = 2
+    ): List<ApkSignature> {
+        val result = mutableListOf<ApkSignature>()
+        try {
+            // The value is a length-prefixed sequence of signers
+                val signersSeqLength = readVarInt(bb)
+                val signersEnd = bb.position().toInt() + signersSeqLength
+
+            while (bb.position() < signersEnd) {
+                val signerLength = readVarInt(bb)
+                val signerEnd = bb.position() + signerLength
+
+                // Signed data (length-prefixed)
+                val signedDataLength = readVarInt(bb)
+                val signedDataStart = bb.position()
+                val signedDataEnd = signedDataStart + signedDataLength
+
+                // Skip digests
+                val digestsLength = readVarInt(bb)
+                bb.position(bb.position() + digestsLength)
+
+                // Certificates (length-prefixed sequence)
+                val certsSeqLength = readVarInt(bb)
+                val certsEnd = bb.position() + certsSeqLength
+
+                while (bb.position() < certsEnd) {
+                    val certLength = readVarInt(bb)
+                    val certBytes = ByteArray(certLength)
+                    bb.get(certBytes)
+
+                    try {
+                        val cf = CertificateFactory.getInstance("X.509")
+                        val cert = cf.generateCertificate(java.io.ByteArrayInputStream(certBytes)) as X509Certificate
+                        result.add(createSignature(version, cert))
+                    } catch (_: Exception) { }
+                }
+
+                // Move to end of signer
+                bb.position(signerEnd)
+            }
+        } catch (_: Exception) { }
+
+        return result
+    }
+
+    private fun readVarInt(bb: java.nio.ByteBuffer): Int {
+        return bb.int and 0x7FFFFFFF
     }
 
     private fun createSignature(version: Int, cert: X509Certificate): ApkSignature {

@@ -12,7 +12,11 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.NavHost
@@ -20,10 +24,16 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.appdex.analyzer.ApkAnalyzerScreen
+import com.appdex.common.MediaNavigationBus
+import com.appdex.common.MediaOpenRequest
 import com.appdex.editor.EditorScreen
 import com.appdex.files.FileManagerScreen
+import com.appdex.player.audio.AudioPlayerScreen
+import com.appdex.player.image.ImageViewerScreen
+import com.appdex.player.video.VideoPlayerScreen
 import com.appdex.settings.SettingsScreen
 import com.appdex.ui.Route
+import kotlinx.coroutines.flow.collectLatest
 
 data class BottomNavItem(
     val route: Any,
@@ -41,6 +51,16 @@ fun AppDexApp() {
         BottomNavItem(Route.Analyzer, "Analyzer", Icons.Default.Analytics),
         BottomNavItem(Route.Settings, "Settings", Icons.Default.Settings)
     )
+
+    // Media player overlay state
+    var mediaRequest by remember { mutableStateOf<MediaOpenRequest?>(null) }
+
+    // Collect media navigation events
+    LaunchedEffect(Unit) {
+        MediaNavigationBus.events.collectLatest { request ->
+            mediaRequest = request
+        }
+    }
 
     Scaffold(
         bottomBar = {
@@ -80,6 +100,37 @@ fun AppDexApp() {
             }
             composable<Route.Settings> {
                 SettingsScreen()
+            }
+        }
+    }
+
+    // Media player overlays
+    mediaRequest?.let { request ->
+        when (request) {
+            is MediaOpenRequest.Image -> {
+                ImageViewerScreen(
+                    imagePaths = request.allPaths,
+                    initialIndex = request.allPaths.indexOf(request.path).coerceAtLeast(0),
+                    onDismiss = { mediaRequest = null }
+                )
+            }
+            is MediaOpenRequest.Audio -> {
+                AudioPlayerScreen(
+                    audioPaths = request.allPaths,
+                    initialIndex = request.index,
+                    onDismiss = { mediaRequest = null }
+                )
+            }
+            is MediaOpenRequest.Video -> {
+                VideoPlayerScreen(
+                    videoPath = request.path,
+                    onDismiss = { mediaRequest = null }
+                )
+            }
+            is MediaOpenRequest.Apk -> {
+                // For now, open APK analyzer with this file
+                // Could also show an APK info dialog
+                mediaRequest = null
             }
         }
     }

@@ -261,12 +261,27 @@ fun FileManagerScreen(
                                     viewModel.handleIntent(FileManagerIntent.NavigateTo(file.path))
                                 } else {
                                     val ext = file.extension.lowercase()
-                                    if (ext in setOf("txt", "md", "json", "xml", "kt", "java", "py", "js", "ts",
-                                        "html", "css", "sh", "yaml", "yml", "c", "cpp", "h", "go", "rs", "rb", "php", "sql")) {
-                                        // Open in internal editor via effect
-                                        emitOpenEditor(context, file)
-                                    } else {
-                                        openFile(context, file)
+                                    when {
+                                        ext in setOf("txt", "md", "json", "xml", "kt", "java", "py", "js", "ts",
+                                            "html", "css", "sh", "yaml", "yml", "c", "cpp", "h", "go", "rs", "rb", "php", "sql") -> {
+                                            emitOpenEditor(context, file)
+                                        }
+                                        ext in setOf("jpg", "jpeg", "png", "gif", "webp", "bmp", "svg") -> {
+                                            val imageFiles = state.files.filter { it.extension.lowercase() in setOf("jpg", "jpeg", "png", "gif", "webp", "bmp", "svg") }
+                                            com.appdex.common.MediaNavigationBus.openImage(file.path, imageFiles.map { it.path })
+                                        }
+                                        ext in setOf("mp3", "wav", "flac", "aac", "ogg", "m4a") -> {
+                                            val audioFiles = state.files.filter { it.extension.lowercase() in setOf("mp3", "wav", "flac", "aac", "ogg", "m4a") }
+                                            val idx = audioFiles.indexOfFirst { it.path == file.path }
+                                            com.appdex.common.MediaNavigationBus.openAudio(audioFiles.map { it.path }, idx.coerceAtLeast(0))
+                                        }
+                                        ext in setOf("mp4", "avi", "mkv", "mov", "webm", "3gp") -> {
+                                            com.appdex.common.MediaNavigationBus.openVideo(file.path)
+                                        }
+                                        ext == "apk" -> {
+                                            com.appdex.common.MediaNavigationBus.openApk(file.path)
+                                        }
+                                        else -> openFile(context, file)
                                     }
                                 }
                             },

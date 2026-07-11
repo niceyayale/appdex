@@ -68,6 +68,7 @@ dependencies {
     implementation(project(":feature:feature-editor"))
     implementation(project(":feature:feature-analyzer"))
     implementation(project(":feature:feature-settings"))
+    implementation(project(":feature:feature-player"))
 
     // ── AndroidX ──
     implementation(libs.androidx.core.ktx)
@@ -97,4 +98,7 @@ dependencies {
 
     // ── Coroutines ──
     implementation(libs.coroutines.android)
+
+    // ── APK parsing ──
+    implementation(project(":library:lib-apk"))
 }
