@@ -41,6 +41,7 @@ include(":feature:feature-settings")
 include(":feature:feature-player")
 include(":feature:feature-terminal")
 include(":feature:feature-tools")
+include(":feature:feature-remote")
 
 // ── Library ──
 include(":library:lib-syntax")

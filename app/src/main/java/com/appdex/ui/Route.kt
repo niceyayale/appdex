@@ -19,5 +19,8 @@ sealed interface Route {
     data object Tools : Route
 
     @Serializable
+    data object Remote : Route
+
+    @Serializable
     data object Settings : Route
 }

@@ -15,6 +15,8 @@ coroutines = "1.9.0"
 serialization = "1.7.3"
 bouncycastle = "1.79"
 commons-compress = "1.27.1"
+commons-net = "3.11.1"
+zxing = "3.5.3"
 zstd-jni = "1.5.6-4"
 lifecycle = "2.8.7"
 core-ktx = "1.15.0"
@@ -80,6 +82,12 @@ coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coi
 # ── Compression ──
 commons-compress = { group = "org.apache.commons", name = "commons-compress", version.ref = "commons-compress" }
 zstd-jni = { group = "com.github.luben", name = "zstd-jni", version.ref = "zstd-jni" }
+
+# ── Network ──
+commons-net = { group = "commons-net", name = "commons-net", version.ref = "commons-net" }
+
+# ── QR Code ──
+zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
 
 # ── Crypto ──
 bouncycastle = { group = "org.bouncycastle", name = "bcprov-jdk18on", version.ref = "bouncycastle" }

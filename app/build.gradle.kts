@@ -71,6 +71,7 @@ dependencies {
     implementation(project(":feature:feature-player"))
     implementation(project(":feature:feature-terminal"))
     implementation(project(":feature:feature-tools"))
+    implementation(project(":feature:feature-remote"))
 
     // ── AndroidX ──
     implementation(libs.androidx.core.ktx)

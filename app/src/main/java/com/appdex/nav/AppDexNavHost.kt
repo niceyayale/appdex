@@ -5,6 +5,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Analytics
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Terminal
@@ -20,6 +21,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -33,6 +35,7 @@ import com.appdex.files.FileManagerScreen
 import com.appdex.player.audio.AudioPlayerScreen
 import com.appdex.player.image.ImageViewerScreen
 import com.appdex.player.video.VideoPlayerScreen
+import com.appdex.remote.RemoteScreen
 import com.appdex.settings.SettingsScreen
 import com.appdex.terminal.TerminalScreen
 import com.appdex.tools.ToolsScreen
@@ -42,7 +45,7 @@ import kotlinx.coroutines.flow.collectLatest
 data class BottomNavItem(
     val route: Any,
     val label: String,
-    val icon: androidx.compose.ui.graphics.vector.ImageVector
+    val icon: ImageVector
 )
 
 @Composable
@@ -55,13 +58,12 @@ fun AppDexApp() {
         BottomNavItem(Route.Analyzer, "APK", Icons.Default.Analytics),
         BottomNavItem(Route.Terminal, "Terminal", Icons.Default.Terminal),
         BottomNavItem(Route.Tools, "Tools", Icons.Default.Build),
+        BottomNavItem(Route.Remote, "Remote", Icons.Default.Cloud),
         BottomNavItem(Route.Settings, "Settings", Icons.Default.Settings)
     )
 
-    // Media player overlay state
     var mediaRequest by remember { mutableStateOf<MediaOpenRequest?>(null) }
 
-    // Collect media navigation events
     LaunchedEffect(Unit) {
         MediaNavigationBus.events.collectLatest { request ->
             mediaRequest = request
@@ -110,13 +112,15 @@ fun AppDexApp() {
             composable<Route.Tools> {
                 ToolsScreen()
             }
+            composable<Route.Remote> {
+                RemoteScreen()
+            }
             composable<Route.Settings> {
                 SettingsScreen()
             }
         }
     }
 
-    // Media player overlays
     mediaRequest?.let { request ->
         when (request) {
             is MediaOpenRequest.Image -> {
