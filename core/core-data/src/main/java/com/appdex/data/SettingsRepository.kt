@@ -69,6 +69,10 @@ class SettingsRepository @Inject constructor(
         dataStore.edit { it[KEY_LAST_PATH] = path }
     }
 
+    suspend fun setRememberPath(remember: Boolean) {
+        dataStore.edit { it[KEY_REMEMBER_PATH] = remember }
+    }
+
     suspend fun setEditorFontSize(size: Int) {
         dataStore.edit { it[KEY_FONT_SIZE] = size }
     }

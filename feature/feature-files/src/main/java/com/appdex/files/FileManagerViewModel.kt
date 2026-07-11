@@ -1,5 +1,6 @@
 package com.appdex.files
 
+import android.os.Environment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.appdex.arch.BaseViewModel
@@ -14,9 +15,7 @@ import java.io.File
 import javax.inject.Inject
 
 @HiltViewModel
-class FileManagerViewModel @Inject constructor(
-    // Repositories will be injected here as features are implemented
-) : BaseViewModel<FileManagerIntent, FileManagerState, FileManagerEffect>(
+class FileManagerViewModel @Inject constructor() : BaseViewModel<FileManagerIntent, FileManagerState, FileManagerEffect>(
     initialState = FileManagerState()
 ) {
 
@@ -58,7 +57,7 @@ class FileManagerViewModel @Inject constructor(
                         isDirectory = file.isDirectory,
                         size = if (file.isFile) file.length() else 0L,
                         lastModified = file.lastModified(),
-                        permissions = "",
+                        permissions = getPermissions(file),
                         mimeType = null,
                         extension = if (file.isFile) file.extension else ""
                     )
@@ -68,16 +67,28 @@ class FileManagerViewModel @Inject constructor(
                 ) ?: emptyList()
 
                 update { it.copy(files = files, isLoading = false) }
+            } catch (e: SecurityException) {
+                update { it.copy(isLoading = false, error = "Permission denied: ${e.message}") }
             } catch (e: Exception) {
                 update { it.copy(isLoading = false, error = e.message ?: "Unknown error") }
             }
         }
     }
 
+    private fun getPermissions(file: File): String {
+        return if (file.canRead() && file.canWrite()) "rw"
+        else if (file.canRead()) "r"
+        else if (file.canWrite()) "w"
+        else "---"
+    }
+
     private fun navigateUp() {
-        val parent = File(currentState.currentPath).parentFile
-        if (parent != null && parent.canRead()) {
+        val current = File(currentState.currentPath)
+        val parent = current.parentFile
+        if (parent != null && parent.canRead() && parent.absolutePath != "/") {
             navigateTo(parent.absolutePath)
+        } else if (current.absolutePath != Environment.getExternalStorageDirectory().absolutePath) {
+            navigateTo(Environment.getExternalStorageDirectory().absolutePath)
         }
     }
 
@@ -87,7 +98,6 @@ class FileManagerViewModel @Inject constructor(
 
     private fun toggleHidden() {
         update { it.copy(showHidden = !it.showHidden) }
-        refresh()
     }
 
     private fun toggleSelection(path: String) {
@@ -139,8 +149,22 @@ class FileManagerViewModel @Inject constructor(
     private fun searchFiles(query: String, regex: Boolean) {
         update { it.copy(isSearching = true, searchQuery = query) }
         viewModelScope.launch(Dispatchers.IO) {
-            // TODO: Implement recursive search
-            update { it.copy(isSearching = false) }
+            val baseDir = File(currentState.currentPath)
+            val results = mutableListOf<FileItem>()
+            baseDir.walkTopDown().maxDepth(5).forEach { file ->
+                if (file.name.contains(query, ignoreCase = true)) {
+                    results.add(FileItem(
+                        name = file.name,
+                        path = file.absolutePath,
+                        isDirectory = file.isDirectory,
+                        size = if (file.isFile) file.length() else 0L,
+                        lastModified = file.lastModified(),
+                        extension = if (file.isFile) file.extension else ""
+                    ))
+                }
+                if (results.size >= 200) return@forEach
+            }
+            update { it.copy(isSearching = false, files = results) }
         }
     }
 

@@ -7,10 +7,10 @@ sealed interface Route {
     data object Files : Route
 
     @Serializable
-    data class Editor(val filePath: String) : Route
+    data object Editor : Route
 
     @Serializable
-    data class Analyzer(val apkPath: String) : Route
+    data object Analyzer : Route
 
     @Serializable
     data object Settings : Route

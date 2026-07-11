@@ -22,7 +22,8 @@ android {
 }
 
 dependencies {
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.lifecycle.viewmodel)
-    implementation(libs.coroutines.core)
+    api(libs.androidx.core.ktx)
+    api(libs.androidx.lifecycle.viewmodel)
+    api(libs.androidx.lifecycle.viewmodel.ktx)
+    api(libs.coroutines.core)
 }
