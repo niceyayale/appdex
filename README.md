@@ -2,6 +2,8 @@
 
 > Your Android, Understood.
 
+[English](./README.md) | [中文](./README_zh.md)
+
 APPDEX is an open-source Android file manager and application analysis tool.
 
 ## Features
@@ -11,6 +13,10 @@ APPDEX is an open-source Android file manager and application analysis tool.
 - **APK Analyzer** — Inspect APK contents, manifest, signatures, and DEX files
 - **Terminal** — Built-in terminal emulator (planned)
 - **Remote Management** — Web-based file access via embedded server (planned)
+
+## Download
+
+Pre-built APKs are available on the [Releases](https://github.com/niceyayale/appdex/releases) page.
 
 ## Tech Stack
 
