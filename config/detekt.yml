@@ -1,0 +1,22 @@
+config:
+  validation: true
+
+complexity:
+  LongMethod:
+    threshold: 80
+  LongParameterList:
+    functionThreshold: 6
+  ComplexCondition:
+    threshold: 5
+  CyclomaticComplexMethod:
+    threshold: 20
+  TooManyFunctions:
+    thresholdInClasses: 15
+  NestedBlockDepth:
+    threshold: 6  # 二进制解析(如 AXML chunk 遍历)天然嵌套较深
+
+style:
+  ReturnCount:
+    max: 4
+  WildcardImport:
+    active: false  # Kotlin 测试代码常用 wildcard
