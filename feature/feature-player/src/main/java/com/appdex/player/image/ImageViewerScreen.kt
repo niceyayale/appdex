@@ -1,10 +1,10 @@
 package com.appdex.player.image
 
-import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,18 +22,16 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.RotateLeft
 import androidx.compose.material.icons.filled.RotateRight
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,15 +39,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import androidx.compose.ui.platform.LocalContext
+import com.appdex.common.FormatUtil
+import com.appdex.ui.components.AppDexBar
+import com.appdex.ui.components.InfoRow
+import com.appdex.ui.theme.*
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ImageViewerScreen(
     imagePaths: List<String>,
@@ -57,13 +61,21 @@ fun ImageViewerScreen(
     onDismiss: () -> Unit
 ) {
     val pagerState = rememberPagerState(initialPage = initialIndex) { imagePaths.size }
-    var showUi by remember { mutableStateOf(true) }
-    var showInfo by remember { mutableStateOf(false) }
+    var showUi by rememberSaveable { mutableStateOf(true) }
+    var showInfo by rememberSaveable { mutableStateOf(false) }
+
+    // Rotation state lifted up so buttons can control it
+    var rotation by remember { mutableFloatStateOf(0f) }
+
+    // Reset rotation when page changes
+    LaunchedEffect(pagerState.currentPage) {
+        rotation = 0f
+    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black)
+            .background(DeepSpaceBlue)
     ) {
         HorizontalPager(
             state = pagerState,
@@ -71,7 +83,9 @@ fun ImageViewerScreen(
         ) { page ->
             ZoomableImage(
                 imagePath = imagePaths[page],
-                onTap = { showUi = !showUi }
+                onTap = { showUi = !showUi },
+                rotationState = rotation,
+                onRotationChange = { rotation = it }
             )
         }
 
@@ -82,39 +96,50 @@ fun ImageViewerScreen(
             exit = fadeOut(),
             modifier = Modifier.align(Alignment.TopCenter)
         ) {
-            TopAppBar(
-                title = {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(DeepSpaceOuter.copy(alpha = 0.6f))
+                    .padding(horizontal = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clickable(onClick = onDismiss),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = "Close",
+                            modifier = Modifier.size(21.dp),
+                            tint = StarlightWhite
+                        )
+                    }
                     Column {
                         Text(
                             text = imagePaths.getOrNull(pagerState.currentPage)
                                 ?.substringAfterLast('/')
                                 ?: "Image",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = Color.White,
+                            color = StarlightWhite,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
                             text = "${pagerState.currentPage + 1} / ${imagePaths.size}",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color.White.copy(alpha = 0.7f)
+                            color = StarlightWhite.copy(alpha = 0.7f)
                         )
                     }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { showInfo = !showInfo }) {
-                        Icon(Icons.Default.Info, contentDescription = "Info", tint = Color.White)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Black.copy(alpha = 0.6f)
-                )
-            )
+                }
+                IconButton(onClick = { showInfo = !showInfo }) {
+                    Icon(Icons.Default.Info, contentDescription = "Info", tint = StarlightWhite)
+                }
+            }
         }
 
         // Bottom controls
@@ -127,17 +152,16 @@ fun ImageViewerScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.Black.copy(alpha = 0.6f))
+                    .background(DeepSpaceOuter.copy(alpha = 0.6f))
                     .padding(8.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                val currentPath = imagePaths.getOrNull(pagerState.currentPage) ?: ""
-                IconButton(onClick = { /* rotate left handled in ZoomableImage */ }) {
-                    Icon(Icons.Default.RotateLeft, contentDescription = "Rotate Left", tint = Color.White)
+                IconButton(onClick = { rotation -= 90f }) {
+                    Icon(Icons.Default.RotateLeft, contentDescription = "Rotate Left", tint = StarlightWhite)
                 }
-                IconButton(onClick = { /* rotate right */ }) {
-                    Icon(Icons.Default.RotateRight, contentDescription = "Rotate Right", tint = Color.White)
+                IconButton(onClick = { rotation += 90f }) {
+                    Icon(Icons.Default.RotateRight, contentDescription = "Rotate Right", tint = StarlightWhite)
                 }
             }
         }
@@ -156,10 +180,11 @@ fun ImageViewerScreen(
 @Composable
 private fun ZoomableImage(
     imagePath: String,
-    onTap: () -> Unit
+    onTap: () -> Unit,
+    rotationState: Float,
+    onRotationChange: (Float) -> Unit
 ) {
     var scale by remember { mutableFloatStateOf(1f) }
-    var rotation by remember { mutableFloatStateOf(0f) }
     var offsetX by remember { mutableFloatStateOf(0f) }
     var offsetY by remember { mutableFloatStateOf(0f) }
 
@@ -176,7 +201,7 @@ private fun ZoomableImage(
                             offsetX += pan.x
                             offsetY += pan.y
                         }
-                        rotation += gestureRotation
+                        onRotationChange(rotationState + gestureRotation)
                     }
                 )
             }
@@ -209,7 +234,7 @@ private fun ZoomableImage(
                     scaleY = scale
                     translationX = offsetX
                     translationY = offsetY
-                    rotationZ = rotation
+                    rotationZ = rotationState
                 }
         )
     }
@@ -226,60 +251,37 @@ private fun ImageInfoDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         androidx.compose.material3.Surface(
-            shape = MaterialTheme.shapes.large,
-            tonalElevation = 6.dp,
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+            color = SurfaceDeep,
             modifier = Modifier.fillMaxWidth(0.85f)
         ) {
             Column(modifier = Modifier.padding(24.dp)) {
                 Text(
                     text = "Image Info",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = AmberGold
                 )
                 Spacer(modifier = Modifier.size(16.dp))
                 InfoRow("Name", file.name)
                 InfoRow("Path", file.parent ?: "")
-                InfoRow("Size", formatFileSize(file.length()))
-                InfoRow("Modified", java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault())
-                    .format(java.util.Date(file.lastModified())))
+                InfoRow("Size", FormatUtil.formatFileSize(file.length()))
+                InfoRow("Modified", FormatUtil.formatTimestamp(file.lastModified()))
                 Spacer(modifier = Modifier.size(16.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    androidx.compose.material3.TextButton(onClick = onDismiss) {
-                        Text("Close")
+                    Box(
+                        modifier = Modifier
+                            .clickable(onClick = onDismiss)
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Text("Close", fontSize = 12.sp, color = AmberGold)
                     }
                 }
             }
         }
     }
-}
-
-@Composable
-private fun InfoRow(label: String, value: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-    }
-}
-
-private fun formatFileSize(bytes: Long): String {
-    if (bytes < 1024) return "$bytes B"
-    if (bytes < 1024 * 1024) return "${bytes / 1024} KB"
-    if (bytes < 1024 * 1024 * 1024) return "${bytes / (1024 * 1024)} MB"
-    return "${bytes / (1024 * 1024 * 1024)} GB"
 }

@@ -5,6 +5,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 
 // ─── Deep Space Dark Color Scheme ───
 val DeepSpaceDarkColorScheme = darkColorScheme(
@@ -24,12 +25,12 @@ val DeepSpaceDarkColorScheme = darkColorScheme(
     onTertiaryContainer = OnAuroraGreenContainer,
 
     background = DeepSpaceBlue,
-    onBackground = StarlightWhite,
+    onBackground = TextPrimary,
 
     surface = SatelliteBlue,
-    onSurface = StarlightWhite,
+    onSurface = TextPrimary,
     surfaceVariant = SatelliteVariant,
-    onSurfaceVariant = OnSatelliteVariant,
+    onSurfaceVariant = TextSecondary,
 
     outline = AsteroidBelt,
     outlineVariant = AsteroidVariant,
@@ -93,10 +94,14 @@ fun AppDexTheme(
         DeepSpaceLightColorScheme
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = AppDexTypography,
-        shapes = AppDexShapes,
-        content = content
-    )
+    val appDexColors = if (darkTheme) DarkAppDexColors else LightAppDexColors
+
+    CompositionLocalProvider(LocalAppDexColors provides appDexColors) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = AppDexTypography,
+            shapes = AppDexShapes,
+            content = content
+        )
+    }
 }

@@ -6,6 +6,7 @@ import java.io.File
 import java.io.IOException
 import java.io.InputStreamReader
 import java.io.OutputStream
+import android.util.Log
 import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
@@ -24,7 +25,8 @@ import java.util.concurrent.Executors
 class WebFileServer(
     private val context: Context,
     private val rootPath: String,
-    private val port: Int = 8080
+    private val port: Int = 8080,
+    private val authToken: String? = null
 ) {
     @Volatile
     private var running = false
@@ -36,26 +38,32 @@ class WebFileServer(
     fun start() {
         if (running) return
         serverSocket = ServerSocket(port)
+        serverSocket?.soTimeout = 0 // Accept blocks indefinitely (normal)
         running = true
 
         Thread {
             while (running) {
                 try {
                     val client = serverSocket?.accept() ?: break
+                    client.soTimeout = 30000 // 30s read timeout per client
                     executor.execute { handleClient(client) }
-                } catch (_: IOException) {
-                    if (running) continue else break
+                } catch (e: IOException) {
+                    if (running) {
+                        Log.w("WebFileServer", "Accept error: ${e.message}")
+                        continue
+                    } else break
                 }
             }
         }.apply {
             isDaemon = true
+            name = "WebFileServer-Accept"
             start()
         }
     }
 
     fun stop() {
         running = false
-        try { serverSocket?.close() } catch (_: Exception) {}
+        try { serverSocket?.close() } catch (e: Exception) { Log.w("AppDex", "Suppressed exception", e) }
         serverSocket = null
         executor.shutdownNow()
     }
@@ -79,6 +87,16 @@ class WebFileServer(
                 val colonIdx = line.indexOf(":")
                 if (colonIdx > 0) {
                     headers[line.substring(0, colonIdx).trim().lowercase()] = line.substring(colonIdx + 1).trim()
+                }
+            }
+
+            // Auth check
+            if (authToken != null) {
+                val authHeader = headers["authorization"]
+                if (authHeader == null || !authHeader.startsWith("Bearer ") || authHeader.removePrefix("Bearer ").trim() != authToken) {
+                    sendResponse(output, 401, "Unauthorized", "text/plain")
+                    output.flush()
+                    return
                 }
             }
 
@@ -112,9 +130,10 @@ class WebFileServer(
             }
 
             output.flush()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Log.e("WebFileServer", "Client handler error: ${e.message}", e)
         } finally {
-            try { socket.close() } catch (_: Exception) {}
+            try { socket.close() } catch (e: Exception) { Log.w("AppDex", "Suppressed exception", e) }
         }
     }
 

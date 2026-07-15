@@ -1,5 +1,7 @@
 package com.appdex.tools.plugins
 
+import android.util.Log
+
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -36,9 +39,9 @@ class JsonFormatterPlugin : AppDexPlugin {
 
     @Composable
     override fun Content() {
-        var input by remember { mutableStateOf("") }
-        var output by remember { mutableStateOf("") }
-        var errorMsg by remember { mutableStateOf("") }
+        var input by rememberSaveable { mutableStateOf("") }
+        var output by rememberSaveable { mutableStateOf("") }
+        var errorMsg by rememberSaveable { mutableStateOf("") }
 
         Column(
             modifier = Modifier
@@ -64,6 +67,7 @@ class JsonFormatterPlugin : AppDexPlugin {
                         output = json.toString(2)
                         errorMsg = ""
                     } catch (e: Exception) {
+                        Log.w("AppDex", "Suppressed exception", e)
                         errorMsg = "Invalid JSON: ${e.message}"
                         output = ""
                     }

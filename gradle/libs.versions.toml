@@ -22,6 +22,8 @@ lifecycle = "2.8.7"
 core-ktx = "1.15.0"
 activity-compose = "1.9.3"
 splashscreen = "1.0.1"
+smali = "3.0.5"
+apksig = "8.7.0"
 
 [libraries]
 # ── AndroidX Core ──
@@ -92,6 +94,15 @@ zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" 
 # ── Crypto ──
 bouncycastle = { group = "org.bouncycastle", name = "bcprov-jdk18on", version.ref = "bouncycastle" }
 
+# ── Smali / DEX ──
+dexlib2 = { group = "com.android.tools.smali", name = "smali-dexlib2", version.ref = "smali" }
+smali-lib = { group = "com.android.tools.smali", name = "smali", version.ref = "smali" }
+baksmali = { group = "com.android.tools.smali", name = "smali-baksmali", version.ref = "smali" }
+
+# ── APK Signing ──
+apksig = { group = "com.android.tools.build", name = "apksig", version.ref = "apksig" }
+bcpkix = { group = "org.bouncycastle", name = "bcpkix-jdk18on", version.ref = "bouncycastle" }
+
 # ── Testing ──
 junit = { group = "junit", name = "junit", version = "4.13.2" }
 mockk = { group = "io.mockk", name = "mockk", version = "1.13.13" }
@@ -108,3 +119,4 @@ kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", versi
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 room = { id = "androidx.room", version.ref = "room" }
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }

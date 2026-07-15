@@ -1,5 +1,7 @@
 package com.appdex.tools
 
+import android.util.Log
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -75,6 +77,7 @@ fun EncodingConverterScreen(onBack: () -> Unit) {
                 }
             }
         } catch (e: Exception) {
+            Log.w("AppDex", "Suppressed exception", e)
             "Error: ${e.message}"
         }
     }

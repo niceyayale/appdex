@@ -1,5 +1,7 @@
 package com.appdex.tools
 
+import android.util.Log
+
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -85,15 +87,47 @@ fun HashCalculatorScreen(onBack: () -> Unit) {
         scope.launch(Dispatchers.IO) {
             isCalculating = true
             try {
-                val data: ByteArray = if (selectedTab == 0) {
-                    inputText.toByteArray()
+                if (selectedTab == 0) {
+                    // Text mode — small data, direct digest is fine
+                    val data = inputText.toByteArray()
+                    md5Result = bytesToHex(MessageDigest.getInstance("MD5").digest(data))
+                    sha1Result = bytesToHex(MessageDigest.getInstance("SHA-1").digest(data))
+                    sha256Result = bytesToHex(MessageDigest.getInstance("SHA-256").digest(data))
                 } else {
-                    filePath?.let { File(it).readBytes() } ?: ByteArray(0)
+                    // File mode — stream the file through MessageDigest to avoid OOM on large files
+                    val path = filePath
+                    if (path.isNullOrEmpty()) {
+                        md5Result = "No file selected"
+                        sha1Result = ""
+                        sha256Result = ""
+                    } else {
+                        val file = File(path)
+                        val maxSize = 500 * 1024 * 1024 // 500MB limit
+                        if (file.length() > maxSize) {
+                            md5Result = "File too large (max 500MB)"
+                            sha1Result = ""
+                            sha256Result = ""
+                        } else {
+                            val md5 = MessageDigest.getInstance("MD5")
+                            val sha1 = MessageDigest.getInstance("SHA-1")
+                            val sha256 = MessageDigest.getInstance("SHA-256")
+                            val buffer = ByteArray(8192)
+                            file.inputStream().use { input ->
+                                var bytesRead: Int
+                                while (input.read(buffer).also { bytesRead = it } > 0) {
+                                    md5.update(buffer, 0, bytesRead)
+                                    sha1.update(buffer, 0, bytesRead)
+                                    sha256.update(buffer, 0, bytesRead)
+                                }
+                            }
+                            md5Result = bytesToHex(md5.digest())
+                            sha1Result = bytesToHex(sha1.digest())
+                            sha256Result = bytesToHex(sha256.digest())
+                        }
+                    }
                 }
-                md5Result = bytesToHex(MessageDigest.getInstance("MD5").digest(data))
-                sha1Result = bytesToHex(MessageDigest.getInstance("SHA-1").digest(data))
-                sha256Result = bytesToHex(MessageDigest.getInstance("SHA-256").digest(data))
             } catch (e: Exception) {
+                Log.w("AppDex", "Suppressed exception", e)
                 md5Result = "Error: ${e.message}"
                 sha1Result = ""
                 sha256Result = ""

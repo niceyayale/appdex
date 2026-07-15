@@ -16,13 +16,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -32,15 +29,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,27 +49,34 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.appdex.ui.components.AppDexBar
+import com.appdex.ui.theme.*
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TerminalScreen(
-    workingDir: String = "/data/data/com.appdex/files"
+    onBack: () -> Unit = {},
+    workingDir: String = "/data/data/com.appdex/files",
+    viewModel: TerminalViewModel = hiltViewModel()
 ) {
     val scope = rememberCoroutineScope()
     val clipboardManager: ClipboardManager = LocalClipboardManager.current
+    val scrollbackLimit by viewModel.scrollback.collectAsStateWithLifecycle()
 
     val session = remember { TerminalSession(workingDir) }
     val lines = remember { mutableStateListOf<TerminalLine>() }
     val listState = rememberLazyListState()
 
-    var input by remember { mutableStateOf("") }
+    var input by rememberSaveable { mutableStateOf("") }
     var isRunning by remember { mutableStateOf(false) }
-    var historyIndex by remember { mutableStateOf(-1) }
+    var historyIndex by rememberSaveable { mutableStateOf(-1) }
     val commandHistory = remember { mutableStateListOf<String>() }
 
-    // Collect terminal output
+    // Collect terminal output with throttled scrolling
     LaunchedEffect(session) {
+        var scrollPending = false
         session.output.collect { output ->
             when (output) {
                 is TerminalOutput.Prompt -> {
@@ -92,9 +96,19 @@ fun TerminalScreen(
                     isRunning = false
                 }
             }
-            // Auto scroll to bottom
-            if (lines.isNotEmpty()) {
-                listState.animateScrollToItem(lines.size - 1)
+            // Enforce scrollback limit
+            val limit = scrollbackLimit.coerceAtLeast(100)
+            while (lines.size > limit) {
+                lines.removeAt(0)
+            }
+            // Throttle scroll: batch scroll requests to avoid jank on high-volume output
+            if (!scrollPending) {
+                scrollPending = true
+                kotlinx.coroutines.delay(50)
+                scrollPending = false
+                if (lines.isNotEmpty()) {
+                    listState.animateScrollToItem(lines.size - 1)
+                }
             }
         }
     }
@@ -109,14 +123,10 @@ fun TerminalScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Terminal, contentDescription = null, modifier = Modifier.size(20.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Terminal", style = MaterialTheme.typography.titleMedium)
-                    }
-                },
+            AppDexBar(
+                title = "终端",
+                back = true,
+                onBack = onBack,
                 actions = {
                     IconButton(
                         onClick = {
@@ -140,6 +150,7 @@ fun TerminalScreen(
                 }
             )
         },
+        containerColor = MaterialTheme.colorScheme.surface,
         bottomBar = {
             // Quick keys bar
             QuickKeysBar(
@@ -178,7 +189,17 @@ fun TerminalScreen(
                             }
                         }
                         "Tab" -> input += "\t"
-                        "Esc" -> { /* no-op for now */ }
+                        "Esc" -> { input = "" }
+                        "Ctrl+Z" -> {
+                            session.kill()
+                            lines.add(TerminalLine.Error("^Z"))
+                            lines.add(TerminalLine.Prompt(workingDir))
+                            isRunning = false
+                        }
+                        "Ctrl+D" -> {
+                            lines.add(TerminalLine.System("EOF"))
+                            lines.add(TerminalLine.Prompt(workingDir))
+                        }
                         else -> input += key
                     }
                 }
@@ -354,7 +375,7 @@ private fun TerminalLineView(line: TerminalLine) {
 
 @Composable
 private fun QuickKeysBar(onKey: (String) -> Unit) {
-    val keys = listOf("Ctrl+C", "Tab", "↑", "↓", "Esc", "Enter")
+    val keys = listOf("Ctrl+C", "Ctrl+Z", "Ctrl+D", "Tab", "↑", "↓", "Esc", "Enter")
     Row(
         modifier = Modifier
             .fillMaxWidth()

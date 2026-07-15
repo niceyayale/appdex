@@ -1,23 +1,33 @@
 package com.appdex.settings
 
+import android.util.Log
 import android.app.Application
 import android.content.Context
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.appdex.data.DensityMode
 import com.appdex.data.LanguageMode
 import com.appdex.data.SettingsRepository
 import com.appdex.data.ThemeMode
+import com.appdex.data.ai.AiConfig
+import com.appdex.data.ai.AiConfigRepository
+import com.appdex.data.ai.AiProviderType
+import com.appdex.data.session.ToolDisplayMode
+import com.appdex.data.session.SessionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.launch
 import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val settings: SettingsRepository,
+    private val aiConfigRepo: AiConfigRepository,
+    private val sessionManager: SessionManager,
     private val app: Application
 ) : ViewModel() {
 
+    // ── Existing settings ──
     val themeMode = settings.themeMode
     val densityMode = settings.densityMode
     val languageMode = settings.languageMode
@@ -30,34 +40,68 @@ class SettingsViewModel @Inject constructor(
     val terminalFontSize = settings.terminalFontSize
     val terminalScrollback = settings.terminalScrollback
 
-    fun setThemeMode(mode: ThemeMode) = runBlocking { settings.setThemeMode(mode) }
-    fun setDensityMode(mode: DensityMode) = runBlocking { settings.setDensityMode(mode) }
-    fun setLanguageMode(mode: LanguageMode) = runBlocking {
+    // ── AI settings ──
+    val aiConfig = aiConfigRepo.config
+    val isAiEnabled = aiConfigRepo.isAiEnabled
+
+    // ── Display mode ──
+    val displayMode = sessionManager.displayMode
+
+    fun setThemeMode(mode: ThemeMode) = viewModelScope.launch { settings.setThemeMode(mode) }
+    fun setDensityMode(mode: DensityMode) = viewModelScope.launch { settings.setDensityMode(mode) }
+    fun setLanguageMode(mode: LanguageMode) = viewModelScope.launch {
         settings.setLanguageMode(mode)
         applyLanguage(mode)
     }
-    fun setShowHidden(show: Boolean) = runBlocking { settings.setShowHiddenFiles(show) }
-    fun setRememberPath(remember: Boolean) = runBlocking { settings.setRememberPath(remember) }
-    fun setFontSize(size: Int) = runBlocking { settings.setEditorFontSize(size) }
-    fun setTabWidth(width: Int) = runBlocking { settings.setEditorTabWidth(width) }
-    fun setTerminalFontSize(size: Int) = runBlocking { settings.setTerminalFontSize(size) }
-    fun setTerminalScrollback(lines: Int) = runBlocking { settings.setTerminalScrollback(lines) }
+    fun setShowHidden(show: Boolean) = viewModelScope.launch { settings.setShowHiddenFiles(show) }
+    fun setRememberPath(remember: Boolean) = viewModelScope.launch { settings.setRememberPath(remember) }
+    fun setFontSize(size: Int) = viewModelScope.launch { settings.setEditorFontSize(size) }
+    fun setTabWidth(width: Int) = viewModelScope.launch { settings.setEditorTabWidth(width) }
+    fun setTerminalFontSize(size: Int) = viewModelScope.launch { settings.setTerminalFontSize(size) }
+    fun setTerminalScrollback(lines: Int) = viewModelScope.launch { settings.setTerminalScrollback(lines) }
+
+    // ── AI methods ──
+    fun setAiProvider(type: AiProviderType) = viewModelScope.launch {
+        aiConfigRepo.setProvider(type)
+    }
+    fun setAiApiKey(key: String) = viewModelScope.launch {
+        aiConfigRepo.setApiKey(key)
+    }
+    fun setAiBaseUrl(url: String) = viewModelScope.launch {
+        aiConfigRepo.setBaseUrl(url)
+    }
+    fun setAiModel(model: String) = viewModelScope.launch {
+        aiConfigRepo.setModel(model)
+    }
+    fun setAiTemperature(temp: Float) = viewModelScope.launch {
+        aiConfigRepo.setTemperature(temp)
+    }
+    fun setAiMaxTokens(tokens: Int) = viewModelScope.launch {
+        aiConfigRepo.setMaxTokens(tokens)
+    }
+    fun updateAiConfig(config: AiConfig) = viewModelScope.launch {
+        aiConfigRepo.updateConfig(config)
+    }
+
+    // ── Display mode ──
+    fun setDisplayMode(mode: ToolDisplayMode) {
+        sessionManager.setDisplayMode(mode)
+    }
 
     fun getCacheSize(): String {
         return try {
             val cacheDir = app.cacheDir
             val size = calculateDirSize(cacheDir)
-            formatSize(size)
-        } catch (_: Exception) {
-            "Unknown"
-        }
+            com.appdex.common.FormatUtil.formatFileSize(size)
+        } catch (e: Exception) { Log.w("AppDex", "Suppressed exception", e); "Unknown" }
     }
 
     fun clearCache() {
-        try {
-            app.cacheDir.deleteRecursively()
-            app.cacheDir.mkdirs()
-        } catch (_: Exception) {
+        viewModelScope.launch {
+            try {
+                app.cacheDir.deleteRecursively()
+                app.cacheDir.mkdirs()
+            } catch (e: Exception) { Log.w("AppDex", "Suppressed exception", e) }
         }
     }
 
@@ -66,9 +110,7 @@ class SettingsViewModel @Inject constructor(
             val pm = app.packageManager
             val info = pm.getPackageInfo(app.packageName, 0)
             "${info.versionName} (${info.longVersionCode})"
-        } catch (_: Exception) {
-            "Unknown"
-        }
+        } catch (e: Exception) { Log.w("AppDex", "Suppressed exception", e); "Unknown" }
     }
 
     private fun applyLanguage(mode: LanguageMode) {
@@ -88,12 +130,5 @@ class SettingsViewModel @Inject constructor(
         var size = 0L
         dir.walkTopDown().forEach { f -> if (f.isFile) size += f.length() }
         return size
-    }
-
-    private fun formatSize(bytes: Long): String {
-        if (bytes < 1024) return "$bytes B"
-        if (bytes < 1024 * 1024) return "%.1f KB".format(bytes / 1024.0)
-        if (bytes < 1024 * 1024 * 1024) return "%.1f MB".format(bytes / (1024.0 * 1024))
-        return "%.1f GB".format(bytes / (1024.0 * 1024 * 1024))
     }
 }

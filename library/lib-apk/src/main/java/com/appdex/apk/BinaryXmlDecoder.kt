@@ -26,6 +26,7 @@ class BinaryXmlDecoder(private val data: ByteArray) {
 
         while (buffer.remaining() >= 8) {
             val chunkType = buffer.short.toInt() and 0xFFFF
+            val headerSizeField = buffer.short.toInt() and 0xFFFF
             val chunkSize = buffer.int
 
             when (chunkType) {
@@ -53,11 +54,13 @@ class BinaryXmlDecoder(private val data: ByteArray) {
                     sb.append("  ".repeat(depth.coerceAtLeast(0)))
                     sb.append("</")
                     val endNamePos = buffer.position()
+                    buffer.int // lineNumber
+                    buffer.int // comment
                     val nameIdx = buffer.int
                     val name = getString(nameIdx)
                     sb.append(name)
                     sb.append(">\n")
-                    buffer.position(endNamePos + chunkSize - 8 - 4)
+                    buffer.position(endNamePos + chunkSize - 8)
                 }
                 CHUNK_XML_CDATA -> {
                     buffer.position(buffer.position() + chunkSize - 8)
@@ -162,7 +165,9 @@ class BinaryXmlDecoder(private val data: ByteArray) {
             val attrNsIdx = buffer.int
             val attrNameIdx = buffer.int
             val attrRawValueIdx = buffer.int
-            val attrType = buffer.short.toInt() and 0xFFFF
+            buffer.short // typedValue size (always 8)
+            buffer.get() // res0 (always 0)
+            val attrType = buffer.get().toInt() and 0xFF
             val attrData = buffer.int
 
             val attrName = getString(attrNameIdx)
@@ -170,10 +175,12 @@ class BinaryXmlDecoder(private val data: ByteArray) {
 
             val value = formatAttributeValue(attrType, attrData, attrRawValueIdx)
 
-            val fullAttrName = if (attrNs.isNotEmpty() && attrNs != "android") {
-                "$attrNs:$attrName"
-            } else if (attrNs == "android") {
-                "android:$attrName"
+            val fullAttrName = if (attrNs.isNotEmpty()) {
+                if (attrNs == "android" || attrNs.contains("schemas.android.com")) {
+                    "android:$attrName"
+                } else {
+                    "$attrNs:$attrName"
+                }
             } else {
                 attrName
             }
@@ -188,7 +195,7 @@ class BinaryXmlDecoder(private val data: ByteArray) {
         sb.append(">\n")
 
         // Move to end of this chunk
-        val headerSize = 8 + 4 + 4 + 4 + 4 + 2 + 2 + 2 + 2 + 2 + 2 // = 36
+        val headerSize = 4 + 4 + 4 + 4 + 2 + 2 + 2 + 2 + 2 + 2 // = 28
         val attrsSize = attrCount * 20 // each attr is 20 bytes
         buffer.position(startPos + headerSize + attrsSize)
     }
@@ -200,7 +207,7 @@ class BinaryXmlDecoder(private val data: ByteArray) {
             if (raw.isNotEmpty()) return raw
         }
 
-        val actualType = type ushr 8
+        val actualType = type
         return when (actualType) {
             TYPE_STRING -> getString(data)
             TYPE_INT_DEC -> data.toString()

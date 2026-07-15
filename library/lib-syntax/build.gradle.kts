@@ -23,4 +23,6 @@ dependencies {
 
     implementation(libs.coroutines.core)
     implementation(libs.serialization.json)
+
+    implementation(project(":core:core-ui"))
 }

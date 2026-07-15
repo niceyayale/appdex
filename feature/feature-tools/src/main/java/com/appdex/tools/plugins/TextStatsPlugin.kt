@@ -19,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -37,7 +38,7 @@ class TextStatsPlugin : AppDexPlugin {
 
     @Composable
     override fun Content() {
-        var text by remember { mutableStateOf("") }
+        var text by rememberSaveable { mutableStateOf("") }
 
         val charCount = text.length
         val charCountNoSpaces = text.replace("\\s".toRegex(), "").length

@@ -5,12 +5,13 @@ import androidx.compose.material3.Shapes
 import androidx.compose.ui.unit.dp
 
 // ─── Deep Space Shapes ───
-// Slightly sharp corners to convey precision
+// Sharp edges (0dp) for most elements per Figma design language.
+// FAB and toggle switches use circular shapes.
 
 val AppDexShapes = Shapes(
-    extraSmall = RoundedCornerShape(4.dp),
-    small = RoundedCornerShape(6.dp),
-    medium = RoundedCornerShape(8.dp),
-    large = RoundedCornerShape(12.dp),
-    extraLarge = RoundedCornerShape(16.dp)
+    extraSmall = RoundedCornerShape(0.dp),
+    small = RoundedCornerShape(0.dp),
+    medium = RoundedCornerShape(0.dp),
+    large = RoundedCornerShape(0.dp),
+    extraLarge = RoundedCornerShape(0.dp)
 )

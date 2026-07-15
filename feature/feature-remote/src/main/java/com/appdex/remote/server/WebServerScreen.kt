@@ -1,5 +1,6 @@
 package com.appdex.remote.server
 
+import android.util.Log
 import android.content.Context
 import android.net.wifi.WifiManager
 import androidx.compose.foundation.Image
@@ -32,12 +33,14 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -58,11 +61,13 @@ fun WebServerScreen(
     val context = LocalContext.current
     val clipboard: ClipboardManager = LocalClipboardManager.current
 
-    var port by remember { mutableStateOf("8080") }
+    var port by rememberSaveable { mutableStateOf("8080") }
+    var enableAuth by rememberSaveable { mutableStateOf(true) }
     var isRunning by remember { mutableStateOf(false) }
     var serverUrl by remember { mutableStateOf("") }
+    var authToken by remember { mutableStateOf("") }
     var qrBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
-    var statusMessage by remember { mutableStateOf("Server stopped") }
+    var statusMessage by rememberSaveable { mutableStateOf("Server stopped") }
     var serverInstance by remember { mutableStateOf<WebFileServer?>(null) }
 
     fun getLocalIp(): String {
@@ -76,25 +81,29 @@ fun WebServerScreen(
                 ipAddress shr 16 and 0xff,
                 ipAddress shr 24 and 0xff
             )
-        } catch (_: Exception) {
+        } catch (e: Exception) { Log.w("AppDex", "Suppressed exception", e); 
             "127.0.0.1"
-        }
+         }
     }
 
     fun startServer() {
         try {
             val actualPort = port.toIntOrNull() ?: 8080
             serverInstance?.stop()
-            val s = WebFileServer(context, rootPath, actualPort)
+            // Generate a short auth token if authentication is enabled
+            val token = if (enableAuth) java.util.UUID.randomUUID().toString().replace("-", "").take(16) else null
+            authToken = token ?: ""
+            val s = WebFileServer(context, rootPath, actualPort, token)
             s.start()
             serverInstance = s
 
             val ip = getLocalIp()
             serverUrl = "http://$ip:$actualPort"
             isRunning = true
-            statusMessage = "Running on $serverUrl"
+            statusMessage = if (token != null) "Running on $serverUrl (auth enabled)" else "Running on $serverUrl"
             qrBitmap = QrCodeGenerator.generate(serverUrl, 512)
         } catch (e: Exception) {
+            Log.w("AppDex", "Suppressed exception", e)
             statusMessage = "Error: ${e.message}"
         }
     }
@@ -196,6 +205,57 @@ fun WebServerScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            // Auth toggle
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text("Bearer Token Authentication", style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        if (enableAuth) "Generates a random token on start" else "No authentication — open access",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    checked = enableAuth,
+                    onCheckedChange = { enableAuth = it },
+                    enabled = !isRunning
+                )
+            }
+
+            // Display token when running with auth
+            if (isRunning && authToken.isNotEmpty()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Auth Token", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(
+                                authToken,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontFamily = FontFamily.Monospace,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        IconButton(onClick = { clipboard.setText(AnnotatedString(authToken)) }) {
+                            Icon(Icons.Default.ContentCopy, contentDescription = "Copy Token", modifier = Modifier.size(18.dp))
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
             // Start/Stop button
             Button(
                 onClick = { if (isRunning) stopServer() else startServer() },
@@ -241,11 +301,13 @@ fun WebServerScreen(
                             color = MaterialTheme.colorScheme.primary
                         )
                         Spacer(modifier = Modifier.height(16.dp))
-                        Image(
-                            bitmap = qrBitmap!!.asImageBitmap(),
-                            contentDescription = "QR Code",
-                            modifier = Modifier.size(240.dp)
-                        )
+                        qrBitmap?.let { bitmap ->
+                            Image(
+                                bitmap = bitmap.asImageBitmap(),
+                                contentDescription = "QR Code",
+                                modifier = Modifier.size(240.dp)
+                            )
+                        }
                         Spacer(modifier = Modifier.height(16.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),

@@ -23,6 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -49,8 +50,8 @@ class TimestampConverterPlugin : AppDexPlugin {
 
     @Composable
     override fun Content() {
-        var timestampInput by remember { mutableStateOf(System.currentTimeMillis().toString()) }
-        var dateInput by remember { mutableStateOf("") }
+        var timestampInput by rememberSaveable { mutableStateOf(System.currentTimeMillis().toString()) }
+        var dateInput by rememberSaveable { mutableStateOf("") }
         val clipboard: ClipboardManager = LocalClipboardManager.current
 
         val utcFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
@@ -68,7 +69,7 @@ class TimestampConverterPlugin : AppDexPlugin {
                 val parsed = utcFormat.parse(dateInput)
                 parsed?.time ?: 0L
             } else 0L
-        } catch (_: Exception) { 0L }
+        } catch (e: Exception) { android.util.Log.w("TimestampConverter", "parse failed", e); 0L }
 
         Column(
             modifier = Modifier

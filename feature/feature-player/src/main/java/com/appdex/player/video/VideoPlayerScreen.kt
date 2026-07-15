@@ -1,6 +1,7 @@
 package com.appdex.player.video
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,22 +12,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.FastForward
 import androidx.compose.material.icons.filled.FastRewind
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.SkipNext
-import androidx.compose.material.icons.filled.SkipPrevious
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -34,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,13 +36,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
-import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
+import com.appdex.ui.components.AppDexBar
+import com.appdex.ui.theme.*
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VideoPlayerScreen(
     videoPath: String,
@@ -70,7 +66,7 @@ fun VideoPlayerScreen(
         }
     }
 
-    var isPlaying by remember { mutableStateOf(true) }
+    var isPlaying by rememberSaveable { mutableStateOf(true) }
     var currentPosition by remember { mutableLongStateOf(0L) }
     var duration by remember { mutableLongStateOf(0L) }
 
@@ -83,115 +79,124 @@ fun VideoPlayerScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = title,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+    Box(modifier = Modifier.fillMaxSize().background(DeepSpaceBlue)) {
+        // Player view
+        AndroidView(
+            modifier = Modifier.fillMaxSize().background(DeepSpaceOuter),
+            factory = { ctx ->
+                PlayerView(ctx).apply {
+                    player = exoPlayer
+                    useController = false
+                    layoutParams = android.view.ViewGroup.LayoutParams(
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT
                     )
-                },
-                navigationIcon = {
-                    IconButton(onClick = {
+                }
+            }
+        )
+
+        // Top bar overlay
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(DeepSpaceBlue.copy(alpha = 0.85f))
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clickable {
                         exoPlayer.release()
                         onDismiss()
-                    }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Black
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    modifier = Modifier.size(21.dp),
+                    tint = TextPrimary
                 )
+            }
+            Text(
+                text = title,
+                color = TextPrimary,
+                fontSize = 14.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(start = 8.dp)
             )
         }
-    ) { padding ->
-        Box(
+
+        // Custom controls overlay
+        Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .background(Color.Black)
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .background(DeepSpaceBlue.copy(alpha = 0.9f))
+                .padding(16.dp)
         ) {
-            // Player view
-            AndroidView(
-                modifier = Modifier.fillMaxSize(),
-                factory = { ctx ->
-                    PlayerView(ctx).apply {
-                        player = exoPlayer
-                        useController = false
-                        layoutParams = android.view.ViewGroup.LayoutParams(
-                            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
-                            android.view.ViewGroup.LayoutParams.MATCH_PARENT
-                        )
-                    }
-                }
-            )
-
-            // Custom controls overlay
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .background(Color.Black.copy(alpha = 0.7f))
-                    .padding(16.dp)
+            // Seek bar
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Seek bar
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = formatTime(currentPosition),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.White
+                Text(
+                    text = formatTime(currentPosition),
+                    fontSize = 10.sp,
+                    color = TextSecondary
+                )
+                Slider(
+                    value = if (duration > 0) currentPosition.toFloat() / duration else 0f,
+                    onValueChange = { fraction ->
+                        if (duration > 0) {
+                            exoPlayer.seekTo((fraction * duration).toLong())
+                        }
+                    },
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 8.dp),
+                    colors = SliderDefaults.colors(
+                        thumbColor = AmberGold,
+                        activeTrackColor = AmberGold,
+                        inactiveTrackColor = BorderMedium
                     )
-                    Slider(
-                        value = if (duration > 0) currentPosition.toFloat() / duration else 0f,
-                        onValueChange = { fraction ->
-                            if (duration > 0) {
-                                exoPlayer.seekTo((fraction * duration).toLong())
-                            }
-                        },
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(horizontal = 8.dp)
-                    )
-                    Text(
-                        text = formatTime(duration),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.White
+                )
+                Text(
+                    text = formatTime(duration),
+                    fontSize = 10.sp,
+                    color = TextSecondary
+                )
+            }
+
+            Spacer(modifier = Modifier.size(8.dp))
+
+            // Playback controls
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                androidx.compose.material3.IconButton(onClick = { exoPlayer.seekBack() }) {
+                    Icon(Icons.Default.FastRewind, contentDescription = "Rewind", tint = TextPrimary)
+                }
+                androidx.compose.material3.IconButton(onClick = {
+                    if (isPlaying) {
+                        exoPlayer.pause()
+                    } else {
+                        exoPlayer.play()
+                    }
+                }) {
+                    Icon(
+                        if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                        contentDescription = if (isPlaying) "Pause" else "Play",
+                        tint = AmberGold,
+                        modifier = Modifier.size(36.dp)
                     )
                 }
-
-                Spacer(modifier = Modifier.size(8.dp))
-
-                // Playback controls
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = { exoPlayer.seekBack() }) {
-                        Icon(Icons.Default.FastRewind, contentDescription = "Rewind", tint = Color.White)
-                    }
-                    IconButton(onClick = {
-                        if (isPlaying) {
-                            exoPlayer.pause()
-                        } else {
-                            exoPlayer.play()
-                        }
-                    }) {
-                        Icon(
-                            if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                            contentDescription = if (isPlaying) "Pause" else "Play",
-                            tint = Color.White,
-                            modifier = Modifier.size(36.dp)
-                        )
-                    }
-                    IconButton(onClick = { exoPlayer.seekForward() }) {
-                        Icon(Icons.Default.FastForward, contentDescription = "Forward", tint = Color.White)
-                    }
+                androidx.compose.material3.IconButton(onClick = { exoPlayer.seekForward() }) {
+                    Icon(Icons.Default.FastForward, contentDescription = "Forward", tint = TextPrimary)
                 }
             }
         }

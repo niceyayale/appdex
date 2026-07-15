@@ -1,5 +1,6 @@
 package com.appdex.apk
 
+import android.util.Log
 import java.io.Closeable
 import java.io.File
 import java.security.MessageDigest
@@ -35,9 +36,9 @@ class ApkFile(private val filePath: String) : Closeable {
                 manifest = parsed
                 return parsed
             }
-        } catch (_: Exception) { }
+        } catch (e: Exception) { Log.w("AppDex", "Suppressed exception", e) }
 
-        val placeholder = ApkManifest(
+        val defaultManifest = ApkManifest(
             packageName = "",
             versionName = "",
             versionCode = 0,
@@ -50,26 +51,35 @@ class ApkFile(private val filePath: String) : Closeable {
             providers = emptyList(),
             metaData = emptyMap()
         )
-        manifest = placeholder
-        return placeholder
+        manifest = defaultManifest
+        return defaultManifest
     }
 
     private fun parseManifestXml(xml: String): ApkManifest {
         val packageName = extractAttr(xml, "<manifest", "package") ?: ""
-        val versionName = extractAttr(xml, "<manifest", "android:versionName") ?: ""
-        val versionCodeStr = extractAttr(xml, "<manifest", "android:versionCode") ?: "0"
+        val versionName = extractAttr(xml, "<manifest", "android:versionName")
+            ?: extractAttr(xml, "<manifest", ":versionName") ?: ""
+        val versionCodeStr = extractAttr(xml, "<manifest", "android:versionCode")
+            ?: extractAttr(xml, "<manifest", ":versionCode") ?: "0"
         val versionCode = versionCodeStr.toLongOrNull() ?: 0L
 
         val usesSdk = extractAttr(xml, "<uses-sdk", "android:minSdkVersion")
+            ?: extractAttr(xml, "<uses-sdk", ":minSdkVersion")
         val minSdk = usesSdk?.toIntOrNull() ?: 1
         val targetSdkStr = extractAttr(xml, "<uses-sdk", "android:targetSdkVersion")
+            ?: extractAttr(xml, "<uses-sdk", ":targetSdkVersion")
         val targetSdk = targetSdkStr?.toIntOrNull() ?: minSdk
 
         val permissions = extractAllAttrs(xml, "<uses-permission", "android:name")
+            .ifEmpty { extractAllAttrs(xml, "<uses-permission", ":name") }
         val activities = extractAllAttrs(xml, "<activity", "android:name")
+            .ifEmpty { extractAllAttrs(xml, "<activity", ":name") }
         val services = extractAllAttrs(xml, "<service", "android:name")
+            .ifEmpty { extractAllAttrs(xml, "<service", ":name") }
         val receivers = extractAllAttrs(xml, "<receiver", "android:name")
+            .ifEmpty { extractAllAttrs(xml, "<receiver", ":name") }
         val providers = extractAllAttrs(xml, "<provider", "android:name")
+            .ifEmpty { extractAllAttrs(xml, "<provider", ":name") }
 
         return ApkManifest(
             packageName = packageName,
@@ -166,7 +176,7 @@ class ApkFile(private val filePath: String) : Closeable {
                             }
                         }
                     }
-                } catch (_: Exception) { }
+                } catch (e: Exception) { Log.w("AppDex", "Suppressed exception", e) }
             }
 
             if (certs.isNotEmpty()) {
@@ -179,13 +189,13 @@ class ApkFile(private val filePath: String) : Closeable {
             }
 
             jarFile.close()
-        } catch (_: Exception) { }
+        } catch (e: Exception) { Log.w("AppDex", "Suppressed exception", e) }
 
         // ── V2/V3 signature (APK Signature Scheme) ──
         try {
             val v2Sigs = parseV2Signature()
             result.addAll(v2Sigs)
-        } catch (_: Exception) { }
+        } catch (e: Exception) { Log.w("AppDex", "Suppressed exception", e) }
 
         signatures = result
         return result
@@ -292,7 +302,7 @@ class ApkFile(private val filePath: String) : Closeable {
                 bb.position(pairStart + pairLength.toInt())
             }
 
-        } catch (_: Exception) { }
+        } catch (e: Exception) { Log.w("AppDex", "Suppressed exception", e) }
 
         return result
     }
@@ -335,13 +345,13 @@ class ApkFile(private val filePath: String) : Closeable {
                         val cf = CertificateFactory.getInstance("X.509")
                         val cert = cf.generateCertificate(java.io.ByteArrayInputStream(certBytes)) as X509Certificate
                         result.add(createSignature(version, cert))
-                    } catch (_: Exception) { }
+                    } catch (e: Exception) { Log.w("AppDex", "Suppressed exception", e) }
                 }
 
                 // Move to end of signer
                 bb.position(signerEnd)
             }
-        } catch (_: Exception) { }
+        } catch (e: Exception) { Log.w("AppDex", "Suppressed exception", e) }
 
         return result
     }

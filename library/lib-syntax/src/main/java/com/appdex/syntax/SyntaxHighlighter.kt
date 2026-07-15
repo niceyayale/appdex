@@ -8,6 +8,13 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
+import com.appdex.ui.theme.AmberGold
+import com.appdex.ui.theme.AuroraGreen
+import com.appdex.ui.theme.NebulaBlue
+import com.appdex.ui.theme.OnAuroraGreenContainer
+import com.appdex.ui.theme.OnNebulaBlueContainer
+import com.appdex.ui.theme.TextMuted
+import com.appdex.ui.theme.TextPrimary
 
 /**
  * Lightweight syntax highlighter for code editing.
@@ -20,17 +27,17 @@ object SyntaxHighlighter {
         val style: SpanStyle
     )
 
-    // ── Color palette ──
-    private val keywordColor = Color(0xFFE8B547)      // Amber gold
-    private val stringColor = Color(0xFF7DD3C0)        // Aurora green
-    private val numberColor = Color(0xFFB794F6)        // Soft purple
-    private val commentColor = Color(0xFF6B7B8F)       // Muted grey-blue
-    private val annotationColor = Color(0xFF5B9BD5)    // Nebula blue
-    private val tagColor = Color(0xFF5B9BD5)           // Nebula blue
-    private val attrColor = Color(0xFFE8B547)          // Amber gold
-    private val funcColor = Color(0xFF8FCFFF)          // Light blue
-    private val typeColor = Color(0xFF99F0DC)          // Light green
-    private val plainColor = Color(0xFFE2E8F0)         // Starlight white
+    // ── Color palette (referencing AppDex DesignSystem) ──
+    private val keywordColor = AmberGold
+    private val stringColor = AuroraGreen
+    private val numberColor = Color(0xFFB794F6)        // Soft purple (syntax-specific, not in DesignSystem)
+    private val commentColor = TextMuted
+    private val annotationColor = NebulaBlue
+    private val tagColor = NebulaBlue
+    private val attrColor = AmberGold
+    private val funcColor = OnNebulaBlueContainer
+    private val typeColor = OnAuroraGreenContainer
+    private val plainColor = TextPrimary
 
     // ── Language rules ──
     private val kotlinRules = listOf(

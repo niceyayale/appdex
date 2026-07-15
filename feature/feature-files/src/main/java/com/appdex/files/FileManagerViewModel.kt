@@ -1,10 +1,14 @@
 package com.appdex.files
 
+import android.util.Log
+
 import android.os.Environment
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.appdex.arch.BaseViewModel
 import com.appdex.data.BookmarkRepository
+import com.appdex.data.SettingsRepository
 import com.appdex.db.BookmarkEntity
 import com.appdex.model.FileItem
 import com.appdex.model.FileOperation
@@ -12,6 +16,7 @@ import com.appdex.model.FileOperationType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -24,13 +29,22 @@ import javax.inject.Inject
 
 @HiltViewModel
 class FileManagerViewModel @Inject constructor(
-    private val bookmarkRepository: BookmarkRepository
+    private val bookmarkRepository: BookmarkRepository,
+    private val settingsRepository: SettingsRepository,
+    savedStateHandle: SavedStateHandle
 ) : BaseViewModel<FileManagerIntent, FileManagerState, FileManagerEffect>(
-    initialState = FileManagerState()
+    initialState = FileManagerState(),
+    savedStateHandle = savedStateHandle
 ) {
 
     init {
-        handleIntent(FileManagerIntent.NavigateTo(currentState.currentPath))
+        viewModelScope.launch {
+            val rememberPath = settingsRepository.rememberLastPath.first()
+            val savedPath = if (rememberPath) settingsRepository.lastPath.first()
+            else restoreState("current_path", "/storage/emulated/0")
+            val initialPath = if (File(savedPath).exists()) savedPath else "/storage/emulated/0"
+            handleIntent(FileManagerIntent.NavigateTo(initialPath))
+        }
         observeBookmarks()
     }
 
@@ -63,6 +77,7 @@ class FileManagerViewModel @Inject constructor(
     }
 
     private fun navigateTo(path: String) {
+        saveState("current_path", path)
         update { it.copy(currentPath = path, isLoading = true, error = null, selectedPaths = emptySet()) }
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -87,10 +102,14 @@ class FileManagerViewModel @Inject constructor(
                         .thenBy { it.name.lowercase() }
                 ) ?: emptyList()
 
+                // Save last path
+                settingsRepository.setLastPath(path)
+
                 update { it.copy(files = files, isLoading = false) }
             } catch (e: SecurityException) {
                 update { it.copy(isLoading = false, error = "Permission denied: ${e.message}") }
             } catch (e: Exception) {
+                Log.w("AppDex", "Suppressed exception", e)
                 update { it.copy(isLoading = false, error = e.message ?: "Unknown error") }
             }
         }
@@ -136,7 +155,10 @@ class FileManagerViewModel @Inject constructor(
         update { it.copy(selectedPaths = emptySet()) }
     }
 
+    private val isOperationRunning: Boolean get() = currentState.operationProgress != null
+
     private fun deleteFiles(paths: List<String>) {
+        if (isOperationRunning) return
         viewModelScope.launch(Dispatchers.IO) {
             paths.forEachIndexed { index, path ->
                 update {
@@ -156,6 +178,7 @@ class FileManagerViewModel @Inject constructor(
     }
 
     private fun renameFile(path: String, newName: String) {
+        if (isOperationRunning) return
         viewModelScope.launch(Dispatchers.IO) {
             val file = File(path)
             val target = File(file.parentFile, newName)
@@ -194,6 +217,7 @@ class FileManagerViewModel @Inject constructor(
     }
 
     private fun copyFiles(sources: List<String>, target: String) {
+        if (isOperationRunning) return
         viewModelScope.launch(Dispatchers.IO) {
             sources.forEachIndexed { index, src ->
                 update {
@@ -214,6 +238,7 @@ class FileManagerViewModel @Inject constructor(
     }
 
     private fun moveFiles(sources: List<String>, target: String) {
+        if (isOperationRunning) return
         viewModelScope.launch(Dispatchers.IO) {
             sources.forEachIndexed { index, src ->
                 update {
@@ -235,7 +260,7 @@ class FileManagerViewModel @Inject constructor(
     }
 
     private fun compressFiles(paths: List<String>, target: String) {
-        if (paths.isEmpty()) return
+        if (paths.isEmpty() || isOperationRunning) return
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val total = paths.size
@@ -262,6 +287,7 @@ class FileManagerViewModel @Inject constructor(
                 emitEffect(FileManagerEffect.CompressComplete)
                 refresh()
             } catch (e: Exception) {
+                Log.w("AppDex", "Suppressed exception", e)
                 update { it.copy(operationProgress = null) }
                 emitEffect(FileManagerEffect.Error("Compress failed: ${e.message}"))
             }
@@ -293,11 +319,14 @@ class FileManagerViewModel @Inject constructor(
     }
 
     private fun extractArchive(path: String, target: String) {
+        if (isOperationRunning) return
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val zipFile = File(path)
                 val targetDir = File(target)
                 targetDir.mkdirs()
+
+                val canonicalTargetDir = targetDir.canonicalPath
 
                 ZipInputStream(FileInputStream(zipFile)).use { zis ->
                     var entry: ZipEntry
@@ -313,6 +342,14 @@ class FileManagerViewModel @Inject constructor(
                             ))
                         }
                         val outFile = File(targetDir, entry.name)
+                        val canonicalOutPath = outFile.canonicalPath
+
+                        // Security: prevent Zip Slip path traversal
+                        if (!canonicalOutPath.startsWith(canonicalTargetDir)) {
+                            zis.closeEntry()
+                            continue
+                        }
+
                         if (entry.isDirectory) {
                             outFile.mkdirs()
                         } else {
@@ -331,6 +368,7 @@ class FileManagerViewModel @Inject constructor(
                 update { it.copy(operationProgress = null) }
                 emitEffect(FileManagerEffect.ExtractComplete)
             } catch (e: Exception) {
+                Log.w("AppDex", "Suppressed exception", e)
                 update { it.copy(operationProgress = null) }
                 emitEffect(FileManagerEffect.Error("Extract failed: ${e.message}"))
             }

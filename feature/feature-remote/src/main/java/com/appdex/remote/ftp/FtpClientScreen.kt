@@ -44,6 +44,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -65,16 +66,16 @@ fun FtpClientScreen() {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    var host by remember { mutableStateOf("") }
-    var port by remember { mutableStateOf("21") }
-    var username by remember { mutableStateOf("anonymous") }
-    var password by remember { mutableStateOf("") }
+    var host by rememberSaveable { mutableStateOf("") }
+    var port by rememberSaveable { mutableStateOf("21") }
+    var username by rememberSaveable { mutableStateOf("anonymous") }
+    var password by rememberSaveable { mutableStateOf("") }
 
     var isConnecting by remember { mutableStateOf(false) }
     var isConnected by remember { mutableStateOf(false) }
-    var statusMsg by remember { mutableStateOf("Not connected") }
-    var currentDir by remember { mutableStateOf("/") }
-    var downloadMsg by remember { mutableStateOf("") }
+    var statusMsg by rememberSaveable { mutableStateOf("Not connected") }
+    var currentDir by rememberSaveable { mutableStateOf("/") }
+    var downloadMsg by rememberSaveable { mutableStateOf("") }
 
     val entries = remember { mutableStateListOf<FtpClientManager.FtpEntry>() }
     val ftpManager = remember { FtpClientManager(context) }

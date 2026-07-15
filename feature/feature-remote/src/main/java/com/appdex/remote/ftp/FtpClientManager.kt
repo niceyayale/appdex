@@ -1,5 +1,6 @@
 package com.appdex.remote.ftp
 
+import android.util.Log
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -51,6 +52,7 @@ class FtpClientManager(
             ftpClient = client
             true
         } catch (e: Exception) {
+            Log.w("AppDex", "Suppressed exception", e)
             false
         }
     }
@@ -70,6 +72,7 @@ class FtpClientManager(
             }.filter { it.name != "." && it.name != ".." }
                 .sortedWith(compareByDescending<FtpEntry> { it.isDirectory }.thenBy { it.name.lowercase() })
         } catch (e: Exception) {
+            Log.w("AppDex", "Suppressed exception", e)
             emptyList()
         }
     }
@@ -87,6 +90,7 @@ class FtpClientManager(
             }
             localFile.absolutePath
         } catch (e: Exception) {
+            Log.w("AppDex", "Suppressed exception", e)
             null
         }
     }
@@ -95,6 +99,7 @@ class FtpClientManager(
         try {
             ftpClient?.printWorkingDirectory()
         } catch (e: Exception) {
+            Log.w("AppDex", "Suppressed exception", e)
             null
         }
     }
@@ -103,6 +108,7 @@ class FtpClientManager(
         try {
             ftpClient?.changeWorkingDirectory(path) == true
         } catch (e: Exception) {
+            Log.w("AppDex", "Suppressed exception", e)
             false
         }
     }
@@ -115,8 +121,7 @@ class FtpClientManager(
                     it.disconnect()
                 }
             }
-        } catch (_: Exception) {
-        } finally {
+        } catch (e: Exception) { Log.w("AppDex", "Suppressed exception", e) } finally {
             ftpClient = null
         }
     }

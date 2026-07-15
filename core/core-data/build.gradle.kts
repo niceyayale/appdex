@@ -21,6 +21,7 @@ dependencies {
     implementation(project(":core:core-model"))
     implementation(project(":core:core-common"))
     implementation(project(":core:core-database"))
+    implementation(project(":library:lib-apk"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.coroutines.core)

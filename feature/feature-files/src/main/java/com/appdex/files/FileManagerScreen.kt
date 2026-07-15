@@ -1,7 +1,10 @@
 package com.appdex.files
 
+import android.util.Log
+
 import android.content.Intent
 import android.net.Uri
+import androidx.core.content.FileProvider
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -26,6 +29,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Check
@@ -61,16 +65,20 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -84,14 +92,36 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import java.io.File
 import com.appdex.common.FormatUtil
 import com.appdex.model.FileItem
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FileManagerScreen(
+    onOpenTextFile: (String) -> Unit = {},
+    onOpenHexFile: (String) -> Unit = {},
+    onNavigateToTab: (String) -> Unit = {},
     viewModel: FileManagerViewModel = hiltViewModel()
 ) {
-    val state by viewModel.state.collectAsState()
+    val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    // Collect effects for Snackbar
+    LaunchedEffect(Unit) {
+        viewModel.effects.collect { effect ->
+            when (effect) {
+                is FileManagerEffect.ShowToast -> scope.launch { snackbarHostState.showSnackbar(effect.message) }
+                is FileManagerEffect.FileDeleted -> scope.launch { snackbarHostState.showSnackbar("已删除") }
+                is FileManagerEffect.CopyComplete -> scope.launch { snackbarHostState.showSnackbar("复制完成") }
+                is FileManagerEffect.MoveComplete -> scope.launch { snackbarHostState.showSnackbar("移动完成") }
+                is FileManagerEffect.CompressComplete -> scope.launch { snackbarHostState.showSnackbar("压缩完成") }
+                is FileManagerEffect.ExtractComplete -> scope.launch { snackbarHostState.showSnackbar("解压完成") }
+                is FileManagerEffect.Error -> scope.launch { snackbarHostState.showSnackbar(effect.message) }
+                is FileManagerEffect.OpenFile, is FileManagerEffect.OpenEditor, is FileManagerEffect.OpenApkAnalyzer, is FileManagerEffect.NavigateToPath -> { /* Handled by navigation callbacks */ }
+            }
+        }
+    }
 
     var showSearch by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
@@ -186,6 +216,9 @@ fun FileManagerScreen(
                     onClear = { viewModel.handleIntent(FileManagerIntent.ClearSelection) }
                 )
             }
+        },
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState)
         }
     ) { padding ->
         Box(
@@ -264,7 +297,7 @@ fun FileManagerScreen(
                                     when {
                                         ext in setOf("txt", "md", "json", "xml", "kt", "java", "py", "js", "ts",
                                             "html", "css", "sh", "yaml", "yml", "c", "cpp", "h", "go", "rs", "rb", "php", "sql") -> {
-                                            emitOpenEditor(context, file)
+                                            onOpenTextFile(file.path)
                                         }
                                         ext in setOf("jpg", "jpeg", "png", "gif", "webp", "bmp", "svg") -> {
                                             val imageFiles = state.files.filter { it.extension.lowercase() in setOf("jpg", "jpeg", "png", "gif", "webp", "bmp", "svg") }
@@ -357,7 +390,9 @@ fun FileManagerScreen(
             },
             confirmButton = {
                 TextButton(onClick = {
-                    viewModel.handleIntent(FileManagerIntent.RenameFile(renameTarget!!.path, renameText))
+                    renameTarget?.let { target ->
+                        viewModel.handleIntent(FileManagerIntent.RenameFile(target.path, renameText))
+                    }
                     showRenameDialog = false
                     renameTarget = null
                 }) { Text("OK") }
@@ -639,7 +674,7 @@ private fun getFileIcon(file: FileItem): androidx.compose.ui.graphics.vector.Ima
         ext in setOf("zip", "rar", "7z", "tar", "gz") -> Icons.Default.FolderOpen
         ext in setOf("kt", "java", "py", "js", "ts", "xml", "json", "yaml", "yml", "md",
             "txt", "c", "cpp", "h", "go", "rs", "rb", "php", "sh", "html", "css", "sql") -> Icons.Default.Description
-        else -> Icons.Default.InsertDriveFile
+        else -> Icons.AutoMirrored.Filled.InsertDriveFile
     }
 }
 
@@ -657,22 +692,21 @@ private fun getIconTint(file: FileItem): Color {
     }
 }
 
-private fun emitOpenEditor(context: android.content.Context, file: FileItem) {
-    // For now, open with external text editor
-    openFile(context, file)
-}
-
 private fun openFile(context: android.content.Context, file: FileItem) {
-    val intent = Intent(Intent.ACTION_VIEW).apply {
-        val uri = Uri.parse(file.path)
-        setDataAndType(uri, getMimeType(file))
-        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    }
     try {
+        val uri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            File(file.path)
+        )
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, getMimeType(file))
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
         context.startActivity(intent)
     } catch (e: Exception) {
-        // No app to handle this file type
+        Log.w("AppDex", "Suppressed exception", e)
     }
 }
 

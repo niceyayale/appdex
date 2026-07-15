@@ -15,15 +15,43 @@ android {
         applicationId = "com.appdex"
         minSdk = 26
         targetSdk = 35
-        versionCode = 7
-        versionName = "1.0.0"
+        versionCode = 20
+        versionName = "2.0.0"
         vectorDrawables.useSupportLibrary = true
+    }
+
+    // ── Signing configs ──
+    // Production: set these via gradle.properties or environment variables:
+    //   APPDEX_STORE_FILE, APPDEX_STORE_PASSWORD, APPDEX_KEY_ALIAS, APPDEX_KEY_PASSWORD
+    // If not provided, falls back to the debug keystore for development builds.
+    val storeFilePath = providers.environmentVariable("APPDEX_STORE_FILE")
+        .orElse(providers.gradleProperty("APPDEX_STORE_FILE"))
+        .orNull
+    signingConfigs {
+        create("release") {
+            if (storeFilePath != null) {
+                storeFile = file(storeFilePath)
+                storePassword = providers.environmentVariable("APPDEX_STORE_PASSWORD")
+                    .orElse(providers.gradleProperty("APPDEX_STORE_PASSWORD")).orNull
+                keyAlias = providers.environmentVariable("APPDEX_KEY_ALIAS")
+                    .orElse(providers.gradleProperty("APPDEX_KEY_ALIAS")).orNull
+                keyPassword = providers.environmentVariable("APPDEX_KEY_PASSWORD")
+                    .orElse(providers.gradleProperty("APPDEX_KEY_PASSWORD")).orNull
+            } else {
+                // Fallback: use debug keystore so release APK can be generated for testing
+                storeFile = file("${System.getProperty("user.home")}/.android/debug.keystore")
+                storePassword = "android"
+                keyAlias = "androiddebugkey"
+                keyPassword = "android"
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -51,6 +79,9 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
+            excludes += "META-INF/INDEX.LIST"
+            excludes += "META-INF/io.netty.versions.properties"
         }
     }
 }
@@ -73,6 +104,17 @@ dependencies {
     implementation(project(":feature:feature-terminal"))
     implementation(project(":feature:feature-tools"))
     implementation(project(":feature:feature-remote"))
+    implementation(project(":feature:feature-dex"))
+    implementation(project(":feature:feature-hex"))
+    implementation(project(":feature:feature-signing"))
+    implementation(project(":feature:feature-repack"))
+    implementation(project(":feature:feature-diff"))
+    implementation(project(":feature:feature-security"))
+    implementation(project(":feature:feature-size"))
+    implementation(project(":feature:feature-axml"))
+    implementation(project(":feature:feature-arsc"))
+    implementation(project(":feature:feature-sqlite"))
+    implementation(project(":feature:feature-elf"))
 
     // ── AndroidX ──
     implementation(libs.androidx.core.ktx)

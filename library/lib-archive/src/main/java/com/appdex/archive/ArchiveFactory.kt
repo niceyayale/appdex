@@ -3,6 +3,8 @@ package com.appdex.archive
 import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
+import android.util.Log
+import kotlin.Result
 
 enum class ArchiveFormat(val extension: String) {
     ZIP("zip"),
@@ -46,15 +48,15 @@ interface ArchiveWriter {
 }
 
 object ArchiveFactory {
-    fun createReader(file: File): ArchiveReader {
+    fun createReader(file: File): Result<ArchiveReader> {
         val format = ArchiveFormat.fromFileName(file.name)
-            ?: throw IllegalArgumentException("Unsupported archive format: ${file.name}")
-        // TODO: Implement per-format readers
-        throw NotImplementedError("Archive reading not yet implemented")
+            ?: return Result.failure(IllegalArgumentException("Unsupported archive format: ${file.name}"))
+        Log.w("ArchiveFactory", "Archive reading not yet implemented for format: $format")
+        return Result.failure(UnsupportedOperationException("Archive reading not yet implemented for format: $format"))
     }
 
-    fun createWriter(file: File, format: ArchiveFormat): ArchiveWriter {
-        // TODO: Implement per-format writers
-        throw NotImplementedError("Archive writing not yet implemented")
+    fun createWriter(file: File, format: ArchiveFormat): Result<ArchiveWriter> {
+        Log.w("ArchiveFactory", "Archive writing not yet implemented for format: $format")
+        return Result.failure(UnsupportedOperationException("Archive writing not yet implemented for format: $format"))
     }
 }
