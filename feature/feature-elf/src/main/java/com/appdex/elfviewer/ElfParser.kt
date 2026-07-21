@@ -1,4 +1,4 @@
-package com.appdex.elfviewer
+﻿package com.appdex.elfviewer
 
 import java.nio.ByteOrder
 

@@ -1,4 +1,4 @@
-package com.appdex.hex
+﻿package com.appdex.hex
 
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -48,15 +48,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.appdex.common.FormatUtil
-import com.appdex.ui.components.AppDexBar
-import com.appdex.ui.components.AppDexDivider
-import com.appdex.ui.components.AppDexSnackbarHost
+import com.appdex.ui.components.AppXBar
+import com.appdex.ui.components.AppXDivider
+import com.appdex.ui.components.AppXSnackbarHost
 import com.appdex.ui.theme.*
 import kotlinx.coroutines.launch
 
 @Composable
 fun HexEditorScreen(
     filePath: String,
+    initialOffset: Long = 0L,
     onBack: () -> Unit = {},
     viewModel: HexEditorViewModel = hiltViewModel(),
 ) {
@@ -70,6 +71,14 @@ fun HexEditorScreen(
     LaunchedEffect(filePath) {
         if (state.filePath != filePath) {
             viewModel.handleIntent(HexEditorIntent.OpenFile(filePath))
+        }
+    }
+
+    // ── Navigation Context: 恢复 offset ──
+    LaunchedEffect(initialOffset, state.filePath) {
+        if (initialOffset > 0L && state.filePath == filePath && state.bytes.isNotEmpty()) {
+            val rowIndex = (initialOffset / HexRepository.BYTES_PER_ROW).toInt()
+            listState.scrollToItem(rowIndex)
         }
     }
 
@@ -103,7 +112,7 @@ fun HexEditorScreen(
     Box(modifier = Modifier.fillMaxSize().background(DeepSpaceBlue)) {
         Column(modifier = Modifier.fillMaxSize()) {
             // Header
-            AppDexBar(
+            AppXBar(
                 title = state.fileName.ifEmpty { "十六进制查看" },
                 back = true,
                 onBack = onBack,
@@ -324,7 +333,7 @@ fun HexEditorScreen(
             }
         }
 
-        AppDexSnackbarHost(
+        AppXSnackbarHost(
             hostState = snackbarHostState,
             modifier = Modifier.align(Alignment.BottomCenter)
         )
@@ -402,7 +411,7 @@ private fun HexRowView(
             modifier = Modifier.width(160.dp).padding(start = 8.dp),
         )
     }
-    AppDexDivider(color = HexDividerColor)
+    AppXDivider(color = HexDividerColor)
 }
 
 @Composable

@@ -1,4 +1,4 @@
-package com.appdex.repack
+﻿package com.appdex.repack
 
 import android.util.Log
 
@@ -14,6 +14,7 @@ import javax.inject.Inject
 @HiltViewModel
 class RepackagingViewModel @Inject constructor(
     private val repackagingRepository: RepackagingRepository,
+    private val workspaceEventBus: com.appdex.data.workspace.WorkspaceEventBus,
 ) : BaseViewModel<RepackagingIntent, RepackagingState, RepackagingEffect>(
     initialState = RepackagingState()
 ) {
@@ -59,7 +60,7 @@ class RepackagingViewModel @Inject constructor(
                 val dexFiles = repackagingRepository.listDexFiles(currentState.inputApkPath)
                 update { it.copy(dexFiles = dexFiles, error = null) }
             } catch (e: Exception) {
-                Log.w("AppDex", "Suppressed exception", e)
+                Log.w("AppX", "Suppressed exception", e)
                 val msg = e.message ?: "加载 DEX 文件列表失败"
                 update { it.copy(error = msg) }
                 emitEffect(RepackagingEffect.ShowError(msg))
@@ -103,10 +104,12 @@ class RepackagingViewModel @Inject constructor(
                         step = RepackStep.COMPLETE,
                     )
                 }
-                emitEffect(RepackagingEffect.RepackComplete(result))
-            } catch (e: Exception) {
-                Log.w("AppDex", "Suppressed exception", e)
-                val msg = e.message ?: "回编译失败"
+emitEffect(RepackagingEffect.RepackComplete(result))
+// Phase 4: Emit RepackCompleted event to Workspace OS
+workspaceEventBus.emit(com.appdex.data.workspace.WorkspaceEvent.RepackCompleted(outputPath))
+} catch (e: Exception) {
+Log.w("AppX", "Suppressed exception", e)
+val msg = e.message ?: "回编译失败"
                 update { it.copy(isProcessing = false, error = msg, step = RepackStep.ENTER_KEYSTORE) }
                 emitEffect(RepackagingEffect.ShowError(msg))
             }
@@ -141,10 +144,12 @@ class RepackagingViewModel @Inject constructor(
                         step = RepackStep.COMPLETE,
                     )
                 }
-                emitEffect(RepackagingEffect.RepackComplete(result))
-            } catch (e: Exception) {
-                Log.w("AppDex", "Suppressed exception", e)
-                val msg = e.message ?: "回编译失败"
+emitEffect(RepackagingEffect.RepackComplete(result))
+// Phase 4: Emit RepackCompleted event to Workspace OS
+workspaceEventBus.emit(com.appdex.data.workspace.WorkspaceEvent.RepackCompleted(outputPath))
+} catch (e: Exception) {
+Log.w("AppX", "Suppressed exception", e)
+val msg = e.message ?: "回编译失败"
                 update { it.copy(isProcessing = false, error = msg, step = RepackStep.ENTER_KEYSTORE) }
                 emitEffect(RepackagingEffect.ShowError(msg))
             }

@@ -1,4 +1,4 @@
-package io.appdex.core.apk
+﻿package io.appdex.core.apk
 
 import io.appdex.core.apk.signing.ApkSignatureInfo
 import io.appdex.core.apk.signing.ApkSigningBlockReader

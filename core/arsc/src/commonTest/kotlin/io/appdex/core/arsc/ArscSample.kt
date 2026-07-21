@@ -1,4 +1,4 @@
-package io.appdex.core.arsc
+﻿package io.appdex.core.arsc
 
 /**
  * 测试工具:构造最小二进制 ARSC。

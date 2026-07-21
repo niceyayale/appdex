@@ -1,4 +1,4 @@
-package io.appdex.core.apk.zip
+﻿package io.appdex.core.apk.zip
 
 import io.appdex.core.io.ByteReader
 import io.appdex.core.io.SeekableChannel

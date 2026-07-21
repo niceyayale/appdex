@@ -1,4 +1,4 @@
-package com.appdex.tools.plugins
+﻿package com.appdex.tools.plugins
 
 import android.util.Log
 
@@ -25,15 +25,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
-import com.appdex.plugin.AppDexPlugin
+import com.appdex.plugin.AppXPlugin
 import com.appdex.plugin.PluginCategory
 import org.json.JSONObject
 
-class JsonFormatterPlugin : AppDexPlugin {
+class JsonFormatterPlugin : AppXPlugin {
     override val id = "json_formatter"
     override val name = "JSON Formatter"
     override val description = "Format and validate JSON data with proper indentation"
-    override val author = "APPDEX"
+    override val author = "AppX"
     override val version = "1.0.0"
     override val category = PluginCategory.FORMAT
 
@@ -67,7 +67,7 @@ class JsonFormatterPlugin : AppDexPlugin {
                         output = json.toString(2)
                         errorMsg = ""
                     } catch (e: Exception) {
-                        Log.w("AppDex", "Suppressed exception", e)
+                        Log.w("AppX", "Suppressed exception", e)
                         errorMsg = "Invalid JSON: ${e.message}"
                         output = ""
                     }

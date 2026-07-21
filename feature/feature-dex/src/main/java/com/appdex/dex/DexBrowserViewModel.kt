@@ -1,4 +1,4 @@
-package com.appdex.dex
+﻿package com.appdex.dex
 
 import android.util.Log
 
@@ -51,7 +51,7 @@ class DexBrowserViewModel @Inject constructor(
                     }
                 }
             } catch (e: Exception) {
-                Log.w("AppDex", "Suppressed exception", e)
+                Log.w("AppX", "Suppressed exception", e)
                 val msg = e.message ?: "加载 DEX 文件失败"
                 update { it.copy(isLoading = false, error = msg) }
                 emitEffect(DexBrowserEffect.ShowError(msg))
@@ -82,7 +82,7 @@ class DexBrowserViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
-                Log.w("AppDex", "Suppressed exception", e)
+                Log.w("AppX", "Suppressed exception", e)
                 val msg = e.message ?: "加载类列表失败"
                 update { it.copy(isLoading = false, error = msg) }
                 emitEffect(DexBrowserEffect.ShowError(msg))
@@ -123,7 +123,7 @@ class DexBrowserViewModel @Inject constructor(
                 )
                 update { it.copy(smaliCode = smali, isLoadingSmali = false) }
             } catch (e: Exception) {
-                Log.w("AppDex", "Suppressed exception", e)
+                Log.w("AppX", "Suppressed exception", e)
                 val msg = e.message ?: "反汇编失败"
                 update { it.copy(isLoadingSmali = false, error = msg) }
                 emitEffect(DexBrowserEffect.ShowError(msg))

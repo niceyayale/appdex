@@ -1,4 +1,4 @@
-package com.appdex.player.video
+﻿package com.appdex.player.video
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -41,7 +41,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
-import com.appdex.ui.components.AppDexBar
+import com.appdex.ui.components.AppXBar
 import com.appdex.ui.theme.*
 
 @Composable

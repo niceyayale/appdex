@@ -1,4 +1,4 @@
-package com.appdex.apk
+﻿package com.appdex.apk
 
 import android.util.Log
 import java.io.Closeable
@@ -36,7 +36,7 @@ class ApkFile(private val filePath: String) : Closeable {
                 manifest = parsed
                 return parsed
             }
-        } catch (e: Exception) { Log.w("AppDex", "Suppressed exception", e) }
+        } catch (e: Exception) { Log.w("AppX", "Suppressed exception", e) }
 
         val defaultManifest = ApkManifest(
             packageName = "",
@@ -176,7 +176,7 @@ class ApkFile(private val filePath: String) : Closeable {
                             }
                         }
                     }
-                } catch (e: Exception) { Log.w("AppDex", "Suppressed exception", e) }
+                } catch (e: Exception) { Log.w("AppX", "Suppressed exception", e) }
             }
 
             if (certs.isNotEmpty()) {
@@ -189,13 +189,13 @@ class ApkFile(private val filePath: String) : Closeable {
             }
 
             jarFile.close()
-        } catch (e: Exception) { Log.w("AppDex", "Suppressed exception", e) }
+        } catch (e: Exception) { Log.w("AppX", "Suppressed exception", e) }
 
         // ── V2/V3 signature (APK Signature Scheme) ──
         try {
             val v2Sigs = parseV2Signature()
             result.addAll(v2Sigs)
-        } catch (e: Exception) { Log.w("AppDex", "Suppressed exception", e) }
+        } catch (e: Exception) { Log.w("AppX", "Suppressed exception", e) }
 
         signatures = result
         return result
@@ -302,7 +302,7 @@ class ApkFile(private val filePath: String) : Closeable {
                 bb.position(pairStart + pairLength.toInt())
             }
 
-        } catch (e: Exception) { Log.w("AppDex", "Suppressed exception", e) }
+        } catch (e: Exception) { Log.w("AppX", "Suppressed exception", e) }
 
         return result
     }
@@ -345,13 +345,13 @@ class ApkFile(private val filePath: String) : Closeable {
                         val cf = CertificateFactory.getInstance("X.509")
                         val cert = cf.generateCertificate(java.io.ByteArrayInputStream(certBytes)) as X509Certificate
                         result.add(createSignature(version, cert))
-                    } catch (e: Exception) { Log.w("AppDex", "Suppressed exception", e) }
+                    } catch (e: Exception) { Log.w("AppX", "Suppressed exception", e) }
                 }
 
                 // Move to end of signer
                 bb.position(signerEnd)
             }
-        } catch (e: Exception) { Log.w("AppDex", "Suppressed exception", e) }
+        } catch (e: Exception) { Log.w("AppX", "Suppressed exception", e) }
 
         return result
     }

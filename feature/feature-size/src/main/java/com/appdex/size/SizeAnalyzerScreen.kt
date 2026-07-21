@@ -1,4 +1,4 @@
-package com.appdex.size
+﻿package com.appdex.size
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -48,9 +48,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.appdex.common.FormatUtil
-import com.appdex.ui.components.AppDexBar
-import com.appdex.ui.components.AppDexButton
-import com.appdex.ui.components.AppDexSection
+import com.appdex.ui.components.AppXBar
+import com.appdex.ui.components.AppXButton
+import com.appdex.ui.components.AppXSection
 import com.appdex.ui.theme.*
 import kotlinx.coroutines.launch
 
@@ -99,7 +99,7 @@ fun SizeAnalyzerScreen(
 
     Box(modifier = Modifier.fillMaxSize().background(DeepSpaceBlue)) {
         Column(modifier = Modifier.fillMaxSize()) {
-            AppDexBar(title = "体积分析", back = true, onBack = onBack, showBell = false)
+            AppXBar(title = "体积分析", back = true, onBack = onBack, showBell = false)
 
             if (state.isAnalyzing) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -148,11 +148,11 @@ private fun SizeInputContent(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Icon(Icons.Default.Analytics, contentDescription = null, tint = IconBlueBright, modifier = Modifier.size(16.dp))
-                Text("APPDEX 差异分析 · 可视化空间占用", fontSize = 10.sp, color = IconBlueBright, fontFamily = FontFamily.Monospace)
+                Text("AppX 差异分析 · 可视化空间占用", fontSize = 10.sp, color = IconBlueBright, fontFamily = FontFamily.Monospace)
             }
         }
 
-        AppDexSection(label = "APK 路径") {
+        AppXSection(label = "APK 路径") {
             OutlinedTextField(
                 value = inputPath,
                 onValueChange = onPathChange,
@@ -164,13 +164,13 @@ private fun SizeInputContent(
             )
         }
 
-        AppDexButton(
+        AppXButton(
             text = "选择 APK 文件",
             icon = Icons.Default.Folder,
             onClick = onPickFile,
         )
 
-        AppDexButton(
+        AppXButton(
             text = "开始分析",
             icon = Icons.Default.Analytics,
             enabled = inputPath.isNotEmpty(),
@@ -218,7 +218,7 @@ private fun SizeResultContent(state: SizeAnalyzerState) {
         }
 
         item {
-            AppDexSection(label = "空间分布") {
+            AppXSection(label = "空间分布") {
                 Column(modifier = Modifier.border(1.dp, BorderLight).padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Box(
                         modifier = Modifier.fillMaxWidth().height(24.dp).clip(RoundedCornerShape(4.dp))
@@ -267,7 +267,7 @@ private fun SizeResultContent(state: SizeAnalyzerState) {
         }
 
         item {
-            AppDexSection(label = "最大文件 (Top ${result.largestFiles.size})") {}
+            AppXSection(label = "最大文件 (Top ${result.largestFiles.size})") {}
         }
 
         items(result.largestFiles.take(10)) { file ->
@@ -297,7 +297,7 @@ private fun SizeResultContent(state: SizeAnalyzerState) {
 
         if (result.duplicateFiles.isNotEmpty()) {
             item {
-                AppDexSection(label = "疑似重复文件 (${result.duplicateFiles.size})") {}
+                AppXSection(label = "疑似重复文件 (${result.duplicateFiles.size})") {}
             }
 
             items(result.duplicateFiles) { file ->

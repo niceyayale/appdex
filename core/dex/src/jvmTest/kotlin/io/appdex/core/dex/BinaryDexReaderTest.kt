@@ -1,4 +1,4 @@
-package io.appdex.core.dex
+﻿package io.appdex.core.dex
 
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test

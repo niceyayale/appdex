@@ -11,10 +11,16 @@ import com.appdex.data.SettingsRepository
 import com.appdex.data.ThemeMode
 import com.appdex.data.ai.AiConfig
 import com.appdex.data.ai.AiConfigRepository
+import com.appdex.data.ai.AiProviderEntity
 import com.appdex.data.ai.AiProviderType
+import com.appdex.data.ai.AiService
 import com.appdex.data.session.ToolDisplayMode
 import com.appdex.data.session.SessionManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.Locale
 import javax.inject.Inject
@@ -24,6 +30,7 @@ class SettingsViewModel @Inject constructor(
     private val settings: SettingsRepository,
     private val aiConfigRepo: AiConfigRepository,
     private val sessionManager: SessionManager,
+    private val aiService: AiService,
     private val app: Application
 ) : ViewModel() {
 
@@ -43,6 +50,8 @@ class SettingsViewModel @Inject constructor(
     // ── AI settings ──
     val aiConfig = aiConfigRepo.config
     val isAiEnabled = aiConfigRepo.isAiEnabled
+    val savedProviders = aiConfigRepo.savedProviders
+    val activeProvider = aiConfigRepo.activeProvider
 
     // ── Display mode ──
     val displayMode = sessionManager.displayMode
@@ -59,6 +68,13 @@ class SettingsViewModel @Inject constructor(
     fun setTabWidth(width: Int) = viewModelScope.launch { settings.setEditorTabWidth(width) }
     fun setTerminalFontSize(size: Int) = viewModelScope.launch { settings.setTerminalFontSize(size) }
     fun setTerminalScrollback(lines: Int) = viewModelScope.launch { settings.setTerminalScrollback(lines) }
+
+    init {
+        // Migrate legacy single-config to multi-provider system on first load
+        viewModelScope.launch {
+            aiConfigRepo.migrateFromLegacyIfNeeded()
+        }
+    }
 
     // ── AI methods ──
     fun setAiProvider(type: AiProviderType) = viewModelScope.launch {
@@ -83,6 +99,42 @@ class SettingsViewModel @Inject constructor(
         aiConfigRepo.updateConfig(config)
     }
 
+    // ── Connection Test ──
+    sealed class TestResult {
+        object Idle : TestResult()
+        object Testing : TestResult()
+        data class Success(val message: String) : TestResult()
+        data class Failure(val message: String) : TestResult()
+    }
+
+    private val _testResult = MutableStateFlow<TestResult>(TestResult.Idle)
+    val testResult: StateFlow<TestResult> = _testResult.asStateFlow()
+
+    fun testAiConnection() {
+        viewModelScope.launch {
+            _testResult.value = TestResult.Testing
+            try {
+                val config = aiConfigRepo.config.first()
+                if (!config.isConfigured()) {
+                    _testResult.value = TestResult.Failure("请先填写 API Key 或 Base URL")
+                    return@launch
+                }
+                val response = aiService.testConnection(config)
+                if (response.success) {
+                    _testResult.value = TestResult.Success("连接成功")
+                } else {
+                    _testResult.value = TestResult.Failure(response.error ?: "连接失败")
+                }
+            } catch (e: Exception) {
+                _testResult.value = TestResult.Failure(e.message ?: "连接失败")
+            }
+        }
+    }
+
+    fun resetTestResult() {
+        _testResult.value = TestResult.Idle
+    }
+
     // ── Display mode ──
     fun setDisplayMode(mode: ToolDisplayMode) {
         sessionManager.setDisplayMode(mode)
@@ -93,7 +145,7 @@ class SettingsViewModel @Inject constructor(
             val cacheDir = app.cacheDir
             val size = calculateDirSize(cacheDir)
             com.appdex.common.FormatUtil.formatFileSize(size)
-        } catch (e: Exception) { Log.w("AppDex", "Suppressed exception", e); "Unknown" }
+        } catch (e: Exception) { Log.w("AppX", "Suppressed exception", e); "Unknown" }
     }
 
     fun clearCache() {
@@ -101,7 +153,7 @@ class SettingsViewModel @Inject constructor(
             try {
                 app.cacheDir.deleteRecursively()
                 app.cacheDir.mkdirs()
-            } catch (e: Exception) { Log.w("AppDex", "Suppressed exception", e) }
+            } catch (e: Exception) { Log.w("AppX", "Suppressed exception", e) }
         }
     }
 
@@ -110,7 +162,7 @@ class SettingsViewModel @Inject constructor(
             val pm = app.packageManager
             val info = pm.getPackageInfo(app.packageName, 0)
             "${info.versionName} (${info.longVersionCode})"
-        } catch (e: Exception) { Log.w("AppDex", "Suppressed exception", e); "Unknown" }
+        } catch (e: Exception) { Log.w("AppX", "Suppressed exception", e); "Unknown" }
     }
 
     private fun applyLanguage(mode: LanguageMode) {

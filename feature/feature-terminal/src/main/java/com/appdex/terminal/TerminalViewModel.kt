@@ -1,4 +1,4 @@
-package com.appdex.terminal
+﻿package com.appdex.terminal
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

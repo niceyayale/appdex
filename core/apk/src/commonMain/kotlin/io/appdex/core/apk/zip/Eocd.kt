@@ -1,4 +1,4 @@
-package io.appdex.core.apk.zip
+﻿package io.appdex.core.apk.zip
 
 /**
  * End of Central Directory Record。

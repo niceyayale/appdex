@@ -1,4 +1,4 @@
-package io.appdex.core.arsc.chunk
+﻿package io.appdex.core.arsc.chunk
 
 object TableChunkType {
     const val TABLE = 0x0002

@@ -1,4 +1,4 @@
-package com.appdex.arsceditor
+﻿package com.appdex.arsceditor
 
 import com.appdex.apk.ApkFile
 import javax.inject.Inject

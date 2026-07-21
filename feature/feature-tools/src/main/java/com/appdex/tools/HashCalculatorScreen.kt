@@ -1,4 +1,4 @@
-package com.appdex.tools
+﻿package com.appdex.tools
 
 import android.util.Log
 
@@ -127,7 +127,7 @@ fun HashCalculatorScreen(onBack: () -> Unit) {
                     }
                 }
             } catch (e: Exception) {
-                Log.w("AppDex", "Suppressed exception", e)
+                Log.w("AppX", "Suppressed exception", e)
                 md5Result = "Error: ${e.message}"
                 sha1Result = ""
                 sha256Result = ""

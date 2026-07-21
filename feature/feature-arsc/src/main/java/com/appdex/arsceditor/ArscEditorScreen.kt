@@ -1,4 +1,4 @@
-package com.appdex.arsceditor
+﻿package com.appdex.arsceditor
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,13 +19,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.appdex.ui.components.AppDexBar
-import com.appdex.ui.components.AppDexSearchBar
+import com.appdex.ui.components.AppXBar
+import com.appdex.ui.components.AppXSearchBar
 import com.appdex.ui.theme.*
 
 @Composable
 fun ArscEditorScreen(
     apkPath: String? = null,
+    resourceId: String? = null,
     onBack: () -> Unit,
     viewModel: ArscEditorViewModel = hiltViewModel(),
 ) {
@@ -37,6 +38,14 @@ fun ArscEditorScreen(
         }
     }
 
+    // ── Navigation Context: resourceId 可用于自动定位资源 ──
+    // 当从其他工具跳转来时，自动搜索指定资源 ID
+    LaunchedEffect(resourceId, state.packages) {
+        if (!resourceId.isNullOrEmpty() && state.packages.isNotEmpty()) {
+            viewModel.handleIntent(ArscEditorIntent.Search(resourceId))
+        }
+    }
+
     Box(modifier = Modifier.fillMaxSize().background(DeepSpaceBlue)) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -44,7 +53,7 @@ fun ArscEditorScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
-                AppDexBar(
+                AppXBar(
                     title = "ARSC 资源表",
                     back = true,
                     onBack = onBack,

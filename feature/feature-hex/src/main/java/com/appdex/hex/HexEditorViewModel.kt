@@ -1,4 +1,4 @@
-package com.appdex.hex
+﻿package com.appdex.hex
 
 import android.util.Log
 
@@ -58,7 +58,7 @@ class HexEditorViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
-                Log.w("AppDex", "Suppressed exception", e)
+                Log.w("AppX", "Suppressed exception", e)
                 val msg = e.message ?: "打开文件失败"
                 update { it.copy(isLoading = false, error = msg) }
                 emitEffect(HexEditorEffect.ShowError(msg))
@@ -92,7 +92,7 @@ class HexEditorViewModel @Inject constructor(
                 update { it.copy(isSaving = false, isDirty = false) }
                 emitEffect(HexEditorEffect.ShowToast("保存成功"))
             } catch (e: Exception) {
-                Log.w("AppDex", "Suppressed exception", e)
+                Log.w("AppX", "Suppressed exception", e)
                 val msg = e.message ?: "保存失败"
                 update { it.copy(isSaving = false, error = msg) }
                 emitEffect(HexEditorEffect.ShowError(msg))
@@ -123,7 +123,7 @@ class HexEditorViewModel @Inject constructor(
                 }
                 emitEffect(HexEditorEffect.SearchComplete(results.size))
             } catch (e: Exception) {
-                Log.w("AppDex", "Suppressed exception", e)
+                Log.w("AppX", "Suppressed exception", e)
                 val msg = e.message ?: "搜索失败"
                 emitEffect(HexEditorEffect.ShowError(msg))
             }

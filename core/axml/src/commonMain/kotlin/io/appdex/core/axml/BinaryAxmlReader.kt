@@ -1,4 +1,4 @@
-package io.appdex.core.axml
+﻿package io.appdex.core.axml
 
 import io.appdex.core.axml.chunk.ChunkType
 import io.appdex.core.axml.chunk.StringPool

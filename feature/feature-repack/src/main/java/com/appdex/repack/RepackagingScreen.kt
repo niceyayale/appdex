@@ -1,4 +1,4 @@
-package com.appdex.repack
+﻿package com.appdex.repack
 
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.background
@@ -49,10 +49,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.appdex.common.FormatUtil
-import com.appdex.ui.components.AppDexBar
-import com.appdex.ui.components.AppDexButton
-import com.appdex.ui.components.AppDexDivider
-import com.appdex.ui.components.AppDexSection
+import com.appdex.ui.components.AppXBar
+import com.appdex.ui.components.AppXButton
+import com.appdex.ui.components.AppXDivider
+import com.appdex.ui.components.AppXSection
 import com.appdex.ui.theme.*
 import java.io.File
 import java.text.SimpleDateFormat
@@ -97,7 +97,7 @@ fun RepackagingScreen(
 
     Box(modifier = Modifier.fillMaxSize().background(DeepSpaceBlue)) {
         Column(modifier = Modifier.fillMaxSize()) {
-            AppDexBar(
+            AppXBar(
                 title = "APK 回编译",
                 back = true,
                 onBack = onBack,
@@ -184,7 +184,7 @@ private fun DexSelectionContent(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        AppDexSection(label = "输入 APK") {
+        AppXSection(label = "输入 APK") {
             Column(modifier = Modifier.border(1.dp, BorderLight).background(SurfaceAlt).padding(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Icon(Icons.Default.Build, contentDescription = null, tint = AmberGold, modifier = Modifier.size(20.dp))
@@ -205,7 +205,7 @@ private fun DexSelectionContent(
             }
         }
 
-        AppDexSection(label = "DEX 文件 (${state.dexFiles.size})") {
+        AppXSection(label = "DEX 文件 (${state.dexFiles.size})") {
             Column(modifier = Modifier.border(1.dp, BorderLight)) {
                 state.dexFiles.forEachIndexed { index, dexName ->
                     val isSelected = dexName in state.selectedDexFiles
@@ -237,13 +237,13 @@ private fun DexSelectionContent(
                         }
                     }
                     if (index < state.dexFiles.size - 1) {
-                        AppDexDivider()
+                        AppXDivider()
                     }
                 }
             }
         }
 
-        AppDexButton(
+        AppXButton(
             text = "下一步 签名配置",
             icon = Icons.Default.VpnKey,
             onClick = onNext,
@@ -271,7 +271,7 @@ private fun KeystoreInputContent(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        AppDexSection(label = "已选 DEX (${state.selectedDexFiles.size})") {
+        AppXSection(label = "已选 DEX (${state.selectedDexFiles.size})") {
             Column(modifier = Modifier.border(1.dp, BorderLight).padding(12.dp)) {
                 state.selectedDexFiles.forEach { dexName ->
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -282,7 +282,7 @@ private fun KeystoreInputContent(
             }
         }
 
-        AppDexSection(label = "Keystore 配置 (用于签名)") {
+        AppXSection(label = "Keystore 配置 (用于签名)") {
             Column(modifier = Modifier.border(1.dp, BorderLight).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = keystorePath,
@@ -327,7 +327,7 @@ private fun KeystoreInputContent(
             }
         }
 
-        AppDexButton(
+        AppXButton(
             text = "回编译 + 签名",
             icon = Icons.Default.Security,
             onClick = onRepackAndSign,
@@ -387,7 +387,7 @@ private fun RepackResultContent(
         }
 
         result?.signingResult?.let { signingResult ->
-            AppDexSection(label = "签名验证") {
+            AppXSection(label = "签名验证") {
                 Column(modifier = Modifier.border(1.dp, BorderLight).padding(12.dp)) {
                     signingResult.verificationResult?.let { ver ->
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -422,7 +422,7 @@ private fun RepackResultContent(
             }
         }
 
-        AppDexSection(label = "输出文件") {
+        AppXSection(label = "输出文件") {
             Column(modifier = Modifier.border(1.dp, BorderLight).padding(12.dp)) {
                 val outputFile = File(result?.outputFilePath ?: "")
                 Text(
@@ -446,7 +446,7 @@ private fun RepackResultContent(
             }
         }
 
-        AppDexButton(
+        AppXButton(
             text = "完成",
             icon = Icons.Default.Check,
             onClick = onBack

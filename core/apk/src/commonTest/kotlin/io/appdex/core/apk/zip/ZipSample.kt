@@ -1,4 +1,4 @@
-package io.appdex.core.apk.zip
+﻿package io.appdex.core.apk.zip
 
 /**
  * 测试工具:构造最小 ZIP 字节流。

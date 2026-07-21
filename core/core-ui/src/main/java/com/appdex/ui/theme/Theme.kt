@@ -1,4 +1,4 @@
-package com.appdex.ui.theme
+﻿package com.appdex.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -78,7 +78,7 @@ val DeepSpaceLightColorScheme = lightColorScheme(
 enum class AppThemeMode { SYSTEM, LIGHT, DARK }
 
 @Composable
-fun AppDexTheme(
+fun AppXTheme(
     themeMode: AppThemeMode = AppThemeMode.SYSTEM,
     content: @Composable () -> Unit
 ) {
@@ -94,13 +94,13 @@ fun AppDexTheme(
         DeepSpaceLightColorScheme
     }
 
-    val appDexColors = if (darkTheme) DarkAppDexColors else LightAppDexColors
+    val AppXColors = if (darkTheme) DarkAppXColors else LightAppXColors
 
-    CompositionLocalProvider(LocalAppDexColors provides appDexColors) {
+    CompositionLocalProvider(LocalAppXColors provides AppXColors) {
         MaterialTheme(
             colorScheme = colorScheme,
-            typography = AppDexTypography,
-            shapes = AppDexShapes,
+            typography = AppXTypography,
+            shapes = AppXShapes,
             content = content
         )
     }

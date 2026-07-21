@@ -1,4 +1,4 @@
-package com.appdex.dex
+﻿package com.appdex.dex
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -44,17 +44,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.appdex.common.FormatUtil
-import com.appdex.ui.components.AppDexBar
-import com.appdex.ui.components.AppDexDivider
-import com.appdex.ui.components.AppDexSearchBar
-import com.appdex.ui.components.AppDexSection
-import com.appdex.ui.components.AppDexSnackbarHost
+import com.appdex.ui.components.AppXBar
+import com.appdex.ui.components.AppXDivider
+import com.appdex.ui.components.AppXSearchBar
+import com.appdex.ui.components.AppXSection
+import com.appdex.ui.components.AppXSnackbarHost
 import com.appdex.ui.theme.*
 import kotlinx.coroutines.launch
 
 @Composable
 fun DexBrowserScreen(
     apkPath: String,
+    searchQuery: String? = null,
     onBack: () -> Unit = {},
     viewModel: DexBrowserViewModel = hiltViewModel(),
 ) {
@@ -80,6 +81,39 @@ fun DexBrowserScreen(
         }
     }
 
+    // ── Navigation Context: auto-search when searchQuery is provided ──
+    // 来自 Command Palette 或 Manifest 组件点击的跨工具联动
+    // 如果在 DEX_LIST 层级，自动选择第一个 DEX 文件，然后搜索
+    androidx.compose.runtime.LaunchedEffect(searchQuery, state.dexFiles, state.viewLevel) {
+        if (!searchQuery.isNullOrEmpty() && state.dexFiles.isNotEmpty()) {
+            if (state.viewLevel == DexViewLevel.DEX_LIST && state.dexFiles.size > 1) {
+                // 多个 DEX 时自动选择第一个
+                viewModel.handleIntent(DexBrowserIntent.SelectDex(state.dexFiles[0].name))
+            } else if (state.viewLevel == DexViewLevel.CLASS_LIST && state.searchQuery != searchQuery) {
+                // 已在类列表层级，直接搜索
+                viewModel.handleIntent(DexBrowserIntent.SearchClasses(searchQuery))
+            }
+        }
+    }
+
+    // ── RC5: Report selection to workspace context + emit WorkspaceEvent ──
+    val workspaceReporter = com.appdex.ui.components.LocalWorkspaceReporter.current
+    val workspaceEventBus = com.appdex.ui.components.LocalWorkspaceEventBus.current
+    androidx.compose.runtime.LaunchedEffect(state.selectedClassType, state.viewLevel) {
+        if (state.viewLevel == DexViewLevel.SMALI_VIEWER && state.selectedClassType.isNotEmpty()) {
+            workspaceReporter?.report(
+                panel = "DEX Browser",
+                selection = state.selectedClassType,
+                action = "查看类: ${state.selectedClassType}",
+                timelineType = "VIEW",
+                timelineTitle = "查看 Smali 代码",
+                timelineDetail = state.selectedClassType
+            )
+            // RC5: Emit SelectClass event so all tools auto-react
+            workspaceEventBus?.emit(com.appdex.data.workspace.WorkspaceEvent.SelectClass(state.selectedClassType))
+        }
+    }
+
     // 收集 Effect
     androidx.compose.runtime.LaunchedEffect(Unit) {
         viewModel.effects.collect { effect ->
@@ -97,7 +131,7 @@ fun DexBrowserScreen(
         ) {
             // Header
             item {
-                AppDexBar(
+                AppXBar(
                     title = when (state.viewLevel) {
                         DexViewLevel.DEX_LIST -> "DEX 浏览"
                         DexViewLevel.CLASS_LIST -> state.selectedDexName
@@ -122,7 +156,7 @@ fun DexBrowserScreen(
             }
         }
 
-        AppDexSnackbarHost(
+        AppXSnackbarHost(
             hostState = snackbarHostState,
             modifier = Modifier.align(Alignment.BottomCenter)
         )
@@ -160,7 +194,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.DexListContent(
 
     item {
         Column(modifier = Modifier.padding(16.dp)) {
-                AppDexSection(label = "DEX 文件 (${state.dexFiles.size})") {
+                AppXSection(label = "DEX 文件 (${state.dexFiles.size})") {
                 Column(modifier = Modifier.border(1.dp, BorderLight)) {
                     state.dexFiles.forEachIndexed { index, dex ->
                         Row(
@@ -210,7 +244,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.DexListContent(
                             )
                         }
                         if (index < state.dexFiles.size - 1) {
-                            AppDexDivider()
+                            AppXDivider()
                         }
                     }
                 }
@@ -227,7 +261,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.ClassListContent(
     // 搜索栏
     item {
         Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-            AppDexSearchBar(
+            AppXSearchBar(
                 placeholder = "搜索类名、方法名",
                 query = state.searchQuery,
                 onQueryChange = { query ->
@@ -385,7 +419,7 @@ private fun ClassRow(
                 tint = TextTertiary
             )
         }
-        AppDexDivider()
+        AppXDivider()
     }
 }
 

@@ -1,4 +1,4 @@
-package com.appdex.db
+﻿package com.appdex.db
 
 import android.content.Context
 import androidx.room.Room
@@ -15,20 +15,20 @@ object DatabaseModule {
 
     @Provides
     @Singleton
-    fun provideDatabase(@ApplicationContext context: Context): AppDexDatabase {
+    fun provideDatabase(@ApplicationContext context: Context): AppXDatabase {
         return Room.databaseBuilder(
             context,
-            AppDexDatabase::class.java,
-            "appdex.db"
+            AppXDatabase::class.java,
+            "AppX.db"
         ).fallbackToDestructiveMigration().build()
     }
 
     @Provides
-    fun provideBookmarkDao(db: AppDexDatabase) = db.bookmarkDao()
+    fun provideBookmarkDao(db: AppXDatabase) = db.bookmarkDao()
 
     @Provides
-    fun provideRecentPathDao(db: AppDexDatabase) = db.recentPathDao()
+    fun provideRecentPathDao(db: AppXDatabase) = db.recentPathDao()
 
     @Provides
-    fun provideSearchHistoryDao(db: AppDexDatabase) = db.searchHistoryDao()
+    fun provideSearchHistoryDao(db: AppXDatabase) = db.searchHistoryDao()
 }

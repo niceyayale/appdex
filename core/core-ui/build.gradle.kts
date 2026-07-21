@@ -27,6 +27,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":core:core-data"))
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)
     implementation(libs.compose.ui.graphics)

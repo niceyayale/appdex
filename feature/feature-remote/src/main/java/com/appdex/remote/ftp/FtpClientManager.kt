@@ -1,4 +1,4 @@
-package com.appdex.remote.ftp
+﻿package com.appdex.remote.ftp
 
 import android.util.Log
 import android.content.Context
@@ -52,7 +52,7 @@ class FtpClientManager(
             ftpClient = client
             true
         } catch (e: Exception) {
-            Log.w("AppDex", "Suppressed exception", e)
+            Log.w("AppX", "Suppressed exception", e)
             false
         }
     }
@@ -72,7 +72,7 @@ class FtpClientManager(
             }.filter { it.name != "." && it.name != ".." }
                 .sortedWith(compareByDescending<FtpEntry> { it.isDirectory }.thenBy { it.name.lowercase() })
         } catch (e: Exception) {
-            Log.w("AppDex", "Suppressed exception", e)
+            Log.w("AppX", "Suppressed exception", e)
             emptyList()
         }
     }
@@ -90,7 +90,7 @@ class FtpClientManager(
             }
             localFile.absolutePath
         } catch (e: Exception) {
-            Log.w("AppDex", "Suppressed exception", e)
+            Log.w("AppX", "Suppressed exception", e)
             null
         }
     }
@@ -99,7 +99,7 @@ class FtpClientManager(
         try {
             ftpClient?.printWorkingDirectory()
         } catch (e: Exception) {
-            Log.w("AppDex", "Suppressed exception", e)
+            Log.w("AppX", "Suppressed exception", e)
             null
         }
     }
@@ -108,7 +108,7 @@ class FtpClientManager(
         try {
             ftpClient?.changeWorkingDirectory(path) == true
         } catch (e: Exception) {
-            Log.w("AppDex", "Suppressed exception", e)
+            Log.w("AppX", "Suppressed exception", e)
             false
         }
     }
@@ -121,7 +121,7 @@ class FtpClientManager(
                     it.disconnect()
                 }
             }
-        } catch (e: Exception) { Log.w("AppDex", "Suppressed exception", e) } finally {
+        } catch (e: Exception) { Log.w("AppX", "Suppressed exception", e) } finally {
             ftpClient = null
         }
     }

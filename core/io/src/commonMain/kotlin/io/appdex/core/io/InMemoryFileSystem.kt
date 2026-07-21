@@ -1,4 +1,4 @@
-package io.appdex.core.io
+﻿package io.appdex.core.io
 
 /**
  * 内存中的 [FileSystem]。所有数据存内存,关闭后丢失。

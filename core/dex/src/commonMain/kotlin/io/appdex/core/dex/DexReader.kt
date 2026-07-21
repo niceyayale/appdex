@@ -1,4 +1,4 @@
-package io.appdex.core.dex
+﻿package io.appdex.core.dex
 
 /**
  * DEX 内的类。

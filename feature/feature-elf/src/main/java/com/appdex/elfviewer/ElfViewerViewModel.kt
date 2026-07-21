@@ -1,4 +1,4 @@
-package com.appdex.elfviewer
+﻿package com.appdex.elfviewer
 
 import android.util.Log
 
@@ -67,7 +67,7 @@ class ElfViewerViewModel @Inject constructor(
                 val elfData = repository.parse(filePath)
                 update { it.copy(elfData = elfData, isLoading = false) }
             } catch (e: Exception) {
-                Log.w("AppDex", "Suppressed exception", e)
+                Log.w("AppX", "Suppressed exception", e)
                 update { it.copy(isLoading = false, error = e.message) }
                 emitEffect(ElfViewerEffect.ShowMessage("解析失败: ${e.message}"))
             }

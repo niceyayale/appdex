@@ -1,4 +1,4 @@
-package io.appdex.core.io
+﻿package io.appdex.core.io
 
 /**
  * 文件系统抽象。所有路径使用 `/` 分隔符(POSIX 风格),根为 `/`。

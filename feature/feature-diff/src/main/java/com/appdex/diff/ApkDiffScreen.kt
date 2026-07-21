@@ -1,4 +1,4 @@
-package com.appdex.diff
+﻿package com.appdex.diff
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -48,9 +48,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.appdex.common.FormatUtil
-import com.appdex.ui.components.AppDexBar
-import com.appdex.ui.components.AppDexButton
-import com.appdex.ui.components.AppDexSection
+import com.appdex.ui.components.AppXBar
+import com.appdex.ui.components.AppXButton
+import com.appdex.ui.components.AppXSection
 import com.appdex.ui.theme.*
 import kotlinx.coroutines.launch
 
@@ -101,7 +101,7 @@ fun ApkDiffScreen(
 
     Box(modifier = Modifier.fillMaxSize().background(DeepSpaceBlue)) {
         Column(modifier = Modifier.fillMaxSize()) {
-            AppDexBar(title = "APK 对比", back = true, onBack = onBack, showBell = false)
+            AppXBar(title = "APK 对比", back = true, onBack = onBack, showBell = false)
 
             if (state.isDiffing) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -164,7 +164,7 @@ private fun DiffInputContent(
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Icon(Icons.Default.Compare, contentDescription = null, tint = IconBlueBright, modifier = Modifier.size(16.dp))
                 Text(
-                    text = "APPDEX 差异分析 · 双 APK 结构对比",
+                    text = "AppX 差异分析 · 双 APK 结构对比",
                     fontSize = 10.sp,
                     color = IconBlueBright,
                     fontFamily = FontFamily.Monospace
@@ -172,7 +172,7 @@ private fun DiffInputContent(
             }
         }
 
-        AppDexSection(label = "旧版 APK") {
+        AppXSection(label = "旧版 APK") {
             OutlinedTextField(
                 value = oldApkPath,
                 onValueChange = onOldPathChange,
@@ -185,13 +185,13 @@ private fun DiffInputContent(
             )
         }
 
-        AppDexButton(
+        AppXButton(
             text = "选择旧版 APK",
             icon = Icons.Default.Folder,
             onClick = onPickOldFile,
         )
 
-        AppDexSection(label = "新版 APK") {
+        AppXSection(label = "新版 APK") {
             OutlinedTextField(
                 value = newApkPath,
                 onValueChange = onNewPathChange,
@@ -204,13 +204,13 @@ private fun DiffInputContent(
             )
         }
 
-        AppDexButton(
+        AppXButton(
             text = "选择新版 APK",
             icon = Icons.Default.Folder,
             onClick = onPickNewFile,
         )
 
-        AppDexButton(
+        AppXButton(
             text = "开始对比",
             icon = Icons.Default.Compare,
             onClick = onDiff,
@@ -236,7 +236,7 @@ private fun DiffResultContent(state: ApkDiffState) {
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
-            AppDexSection(label = "对比摘要") {
+            AppXSection(label = "对比摘要") {
                 Column(modifier = Modifier.border(1.dp, BorderLight).padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     SummaryRow("旧版 APK", "${result.oldApkName} (${FormatUtil.formatFileSize(result.oldApkSize)})")
                     SummaryRow("新版 APK", "${result.newApkName} (${FormatUtil.formatFileSize(result.newApkSize)})")
@@ -272,7 +272,7 @@ private fun DiffResultContent(state: ApkDiffState) {
         }
 
         item {
-            AppDexSection(label = "文件差异 (${result.fileDiffs.size})") {
+            AppXSection(label = "文件差异 (${result.fileDiffs.size})") {
                 Text(
                     text = "仅展示有变化的文件",
                     fontSize = 9.sp,
@@ -317,7 +317,7 @@ private fun DiffStatCard(label: String, count: Int, color: Color, modifier: Modi
 
 @Composable
 private fun ManifestDiffSection(diff: ManifestDiff) {
-    AppDexSection(label = "清单差异") {
+    AppXSection(label = "清单差异") {
         Column(modifier = Modifier.border(1.dp, BorderLight).padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             if (diff.addedPermissions.isNotEmpty()) {
                 ManifestDiffGroup("新增权限 (+${diff.addedPermissions.size})", diff.addedPermissions, AuroraGreen)

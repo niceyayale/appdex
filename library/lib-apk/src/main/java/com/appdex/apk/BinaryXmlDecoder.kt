@@ -1,4 +1,4 @@
-package com.appdex.apk
+﻿package com.appdex.apk
 
 import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer

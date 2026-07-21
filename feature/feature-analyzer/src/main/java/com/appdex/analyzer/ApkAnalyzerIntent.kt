@@ -1,4 +1,4 @@
-package com.appdex.analyzer
+﻿package com.appdex.analyzer
 
 import android.net.Uri
 import com.appdex.arch.MviIntent

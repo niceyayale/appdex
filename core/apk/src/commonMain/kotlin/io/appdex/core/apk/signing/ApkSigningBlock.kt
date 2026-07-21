@@ -1,4 +1,4 @@
-package io.appdex.core.apk.signing
+﻿package io.appdex.core.apk.signing
 
 import io.appdex.core.io.ByteReader
 import io.appdex.core.io.SeekableChannel

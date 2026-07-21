@@ -22,6 +22,7 @@ dependencies {
     implementation(project(":core:core-arch"))
     implementation(project(":core:core-ui"))
     implementation(project(":core:core-common"))
+    implementation(project(":core:core-data"))
     implementation(project(":library:lib-apk"))
 
     implementation(platform(libs.compose.bom))

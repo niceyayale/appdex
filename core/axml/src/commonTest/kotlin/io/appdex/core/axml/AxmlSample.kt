@@ -1,4 +1,4 @@
-package io.appdex.core.axml
+﻿package io.appdex.core.axml
 
 /**
  * 测试工具:构造二进制 AXML 字节流。

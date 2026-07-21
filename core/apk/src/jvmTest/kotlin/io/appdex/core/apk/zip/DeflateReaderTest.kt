@@ -1,4 +1,4 @@
-package io.appdex.core.apk.zip
+﻿package io.appdex.core.apk.zip
 
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test

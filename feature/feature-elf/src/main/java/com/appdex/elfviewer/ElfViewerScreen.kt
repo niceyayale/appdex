@@ -1,4 +1,4 @@
-package com.appdex.elfviewer
+﻿package com.appdex.elfviewer
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.appdex.ui.components.AppDexBar
+import com.appdex.ui.components.AppXBar
 import com.appdex.ui.theme.*
 
 @Composable
@@ -45,7 +45,7 @@ fun ElfViewerScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
-                AppDexBar(
+                AppXBar(
                     title = if (state.fileName.isNotEmpty()) state.fileName else "ELF 查看",
                     back = true,
                     onBack = onBack,

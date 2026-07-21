@@ -1,4 +1,4 @@
-package com.appdex.security
+﻿package com.appdex.security
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -48,10 +48,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.appdex.ui.components.AppDexBar
-import com.appdex.ui.components.AppDexButton
-import com.appdex.ui.components.AppDexDivider
-import com.appdex.ui.components.AppDexSection
+import com.appdex.ui.components.AppXBar
+import com.appdex.ui.components.AppXButton
+import com.appdex.ui.components.AppXDivider
+import com.appdex.ui.components.AppXSection
 import com.appdex.ui.theme.*
 import kotlinx.coroutines.launch
 
@@ -103,7 +103,7 @@ fun SecurityScannerScreen(
 
     Box(modifier = Modifier.fillMaxSize().background(DeepSpaceBlue)) {
         Column(modifier = Modifier.fillMaxSize()) {
-            AppDexBar(title = "安全扫描", back = true, onBack = onBack, showBell = false)
+            AppXBar(title = "安全扫描", back = true, onBack = onBack, showBell = false)
 
             if (state.isScanning) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -152,11 +152,11 @@ private fun ScanInputContent(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Icon(Icons.Default.Shield, contentDescription = null, tint = RedSupergiant, modifier = Modifier.size(16.dp))
-                Text("APPDEX 安全扫描 · 深度安全审计", fontSize = 10.sp, color = RedSupergiant, fontFamily = FontFamily.Monospace)
+                Text("AppX 安全扫描 · 深度安全审计", fontSize = 10.sp, color = RedSupergiant, fontFamily = FontFamily.Monospace)
             }
         }
 
-        AppDexSection(label = "APK 路径") {
+        AppXSection(label = "APK 路径") {
             OutlinedTextField(
                 value = inputPath,
                 onValueChange = onPathChange,
@@ -169,20 +169,20 @@ private fun ScanInputContent(
             )
         }
 
-        AppDexButton(
+        AppXButton(
             text = "选择 APK 文件",
             icon = Icons.Default.Folder,
             onClick = onPickFile,
         )
 
-        AppDexButton(
+        AppXButton(
             text = "开始安全扫描",
             icon = Icons.Default.BugReport,
             enabled = inputPath.isNotEmpty(),
             onClick = onScan,
         )
 
-        AppDexSection(label = "扫描项") {
+        AppXSection(label = "扫描项") {
             Column(modifier = Modifier.border(1.dp, BorderLight).padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 ScanItem("硬编码 API 密钥 / Token / 密码")
                 ScanItem("危险权限使用检查")
@@ -211,9 +211,11 @@ private fun ScanResultContent(state: SecurityScannerState) {
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
+            // ── 统一评分：使用 state.unifiedScore，与 Workspace/Report 完全一致 ──
+            val displayScore = state.unifiedScore
             val scoreColor = when {
-                result.securityScore >= 80 -> AuroraGreen
-                result.securityScore >= 60 -> AmberGold
+                displayScore >= 80 -> AuroraGreen
+                displayScore >= 60 -> AmberGold
                 else -> RedSupergiant
             }
             Box(
@@ -222,7 +224,7 @@ private fun ScanResultContent(state: SecurityScannerState) {
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = result.securityScore.toString(),
+                        text = displayScore.toString(),
                         fontSize = 36.sp,
                         color = scoreColor,
                         fontFamily = FontFamily.Monospace,
@@ -248,7 +250,7 @@ private fun ScanResultContent(state: SecurityScannerState) {
         }
 
         item {
-            AppDexSection(label = "安全隐患 (${result.issues.size})") {}
+            AppXSection(label = "安全隐患 (${result.issues.size})") {}
         }
 
         items(result.issues) { issue ->

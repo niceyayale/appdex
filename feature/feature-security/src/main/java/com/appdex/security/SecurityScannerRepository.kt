@@ -1,4 +1,4 @@
-package com.appdex.security
+﻿package com.appdex.security
 
 import android.util.Log
 import com.appdex.apk.ApkFile
@@ -182,8 +182,8 @@ class SecurityScannerRepository @Inject constructor() {
         val low = issues.count { it.severity == Severity.LOW }
         val info = issues.count { it.severity == Severity.INFO }
 
-        // 计算安全评分 (0-100)
-        val score = maxOf(0, 100 - critical * 25 - high * 15 - medium * 8 - low * 3)
+        // 统一计算安全评分 — 使用 RiskScoreCalculator（唯一来源）
+        val score = com.appdex.data.session.RiskScoreCalculator.calculate(critical, high, medium, low)
 
         return SecurityScanResult(
             apkName = File(apkPath).name,
@@ -335,7 +335,7 @@ class SecurityScannerRepository @Inject constructor() {
                     }
                 }
             }
-        } catch (e: Exception) { Log.w("AppDex", "Suppressed exception", e) }
+        } catch (e: Exception) { Log.w("AppX", "Suppressed exception", e) }
     }
 
     private fun scanTrackingSdk(apkInfo: com.appdex.apk.ApkInfo, issues: MutableList<SecurityIssue>) {
@@ -385,7 +385,7 @@ class SecurityScannerRepository @Inject constructor() {
                     }
                 }
             }
-        } catch (e: Exception) { Log.w("AppDex", "Suppressed exception", e) }
+        } catch (e: Exception) { Log.w("AppX", "Suppressed exception", e) }
     }
 
     /**
@@ -426,7 +426,7 @@ class SecurityScannerRepository @Inject constructor() {
                     strings.add(str)
                 }
             }
-        } catch (e: Exception) { Log.w("AppDex", "Suppressed exception", e) }
+        } catch (e: Exception) { Log.w("AppX", "Suppressed exception", e) }
 
         return strings
     }

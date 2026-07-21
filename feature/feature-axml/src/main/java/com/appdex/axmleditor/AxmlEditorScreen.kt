@@ -1,4 +1,4 @@
-package com.appdex.axmleditor
+﻿package com.appdex.axmleditor
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -20,8 +20,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.appdex.ui.components.AppDexBar
-import com.appdex.ui.components.AppDexButton
+import com.appdex.ui.components.AppXBar
+import com.appdex.ui.components.AppXButton
 import com.appdex.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,8 +35,11 @@ fun AxmlEditorScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(apkPath, entryName) {
-        if (apkPath != null && entryName != null) {
-            viewModel.handleIntent(AxmlEditorIntent.LoadFromApk(apkPath, entryName))
+        if (apkPath != null && apkPath.isNotEmpty()) {
+            // When entryName is null, default to AndroidManifest.xml — this is the
+            // most common use case when navigating from Workspace "查看应用配置"
+            val entry = entryName ?: "AndroidManifest.xml"
+            viewModel.handleIntent(AxmlEditorIntent.LoadFromApk(apkPath, entry))
         }
     }
 
@@ -46,7 +49,7 @@ fun AxmlEditorScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState()),
         ) {
-            AppDexBar(
+            AppXBar(
                 title = if (state.fileName.isNotEmpty()) state.fileName else "AXML 编辑器",
                 back = true,
                 onBack = onBack,
@@ -61,14 +64,14 @@ fun AxmlEditorScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Box(modifier = Modifier.weight(1f)) {
-                    AppDexButton(
+                    AppXButton(
                         text = if (state.isEditing) "预览" else "编辑",
                         icon = if (state.isEditing) Icons.Default.Visibility else Icons.Default.Edit,
                         onClick = { viewModel.handleIntent(AxmlEditorIntent.ToggleEdit) },
                     )
                 }
                 Box(modifier = Modifier.weight(1f)) {
-                    AppDexButton(
+                    AppXButton(
                         text = "编码",
                         icon = Icons.Default.Build,
                         onClick = { viewModel.handleIntent(AxmlEditorIntent.EncodeToBinary) },
@@ -128,17 +131,46 @@ fun AxmlEditorScreen(
                         ),
                     )
                 } else {
-                    SelectionContainer {
-                        Text(
-                            text = state.xmlText.ifEmpty { "// 点击编辑按钮开始编辑" },
+                    if (state.xmlText.isEmpty()) {
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp)
-                                .horizontalScroll(rememberScrollState()),
-                            fontFamily = FontFamily.Monospace,
-                            fontSize = 13.sp,
-                            color = TextPrimary,
-                        )
+                                .padding(32.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Text(
+                                text = "暂无内容",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = TextSecondary,
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "从工作区打开 APK 后，选择 AndroidManifest.xml 即可查看和编辑",
+                                fontSize = 11.sp,
+                                color = TextTertiary,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            AppXButton(
+                                text = "返回",
+                                icon = Icons.Default.Build,
+                                onClick = onBack,
+                            )
+                        }
+                    } else {
+                        SelectionContainer {
+                            Text(
+                                text = state.xmlText,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp)
+                                    .horizontalScroll(rememberScrollState()),
+                                fontFamily = FontFamily.Monospace,
+                                fontSize = 13.sp,
+                                color = TextPrimary,
+                            )
+                        }
                     }
                 }
             }

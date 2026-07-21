@@ -1,4 +1,4 @@
-package com.appdex.axmleditor
+﻿package com.appdex.axmleditor
 
 import java.nio.ByteBuffer
 import java.nio.ByteOrder

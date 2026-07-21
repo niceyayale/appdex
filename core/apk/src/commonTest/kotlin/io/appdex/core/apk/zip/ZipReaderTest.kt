@@ -1,4 +1,4 @@
-package io.appdex.core.apk.zip
+﻿package io.appdex.core.apk.zip
 
 import io.appdex.core.io.InMemorySeekableChannel
 import org.junit.jupiter.api.Assertions.*

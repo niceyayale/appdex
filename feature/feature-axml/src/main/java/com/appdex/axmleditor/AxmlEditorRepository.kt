@@ -1,4 +1,4 @@
-package com.appdex.axmleditor
+﻿package com.appdex.axmleditor
 
 import com.appdex.apk.ApkFile
 import javax.inject.Inject

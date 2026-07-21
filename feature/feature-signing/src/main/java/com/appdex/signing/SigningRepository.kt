@@ -1,4 +1,4 @@
-package com.appdex.signing
+﻿package com.appdex.signing
 
 import android.util.Log
 
@@ -113,7 +113,7 @@ class SigningRepository @Inject constructor() {
             .setV1SigningEnabled(schemeConfig.v1Enabled)
             .setV2SigningEnabled(schemeConfig.v2Enabled)
             .setV3SigningEnabled(schemeConfig.v3Enabled)
-            .setCreatedBy("APPDEX")
+            .setCreatedBy("AppX")
             .build()
 
         signer.sign()
@@ -152,7 +152,7 @@ class SigningRepository @Inject constructor() {
                 errors.add(issue.toString())
             }
         } catch (e: Exception) {
-            Log.w("AppDex", "Suppressed exception", e)
+            Log.w("AppX", "Suppressed exception", e)
             errors.add(e.message ?: "验证失败")
         }
 
@@ -283,7 +283,7 @@ class SigningRepository @Inject constructor() {
                 append("V3: ${if (result.isVerifiedUsingV3Scheme) "✓" else "✗"}\n")
             }
         } catch (e: Exception) {
-            Log.w("AppDex", "Suppressed exception", e)
+            Log.w("AppX", "Suppressed exception", e)
             "验证失败: ${e.message}"
         }
     }

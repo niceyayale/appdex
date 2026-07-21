@@ -1,4 +1,4 @@
-package com.appdex.arsceditor
+﻿package com.appdex.arsceditor
 
 import java.nio.ByteBuffer
 import java.nio.ByteOrder

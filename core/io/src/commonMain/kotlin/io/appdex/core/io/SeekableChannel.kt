@@ -1,4 +1,4 @@
-package io.appdex.core.io
+﻿package io.appdex.core.io
 
 /**
  * 可随机寻址的字节通道。读 / 写共享一个游标。

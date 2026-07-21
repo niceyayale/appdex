@@ -1,4 +1,4 @@
-package com.appdex.remote
+﻿package com.appdex.remote
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -26,8 +26,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.appdex.remote.ftp.FtpClientScreen
 import com.appdex.remote.server.WebServerScreen
-import com.appdex.ui.components.AppDexBar
-import com.appdex.ui.components.AppDexTabRow
+import com.appdex.ui.components.AppXBar
+import com.appdex.ui.components.AppXTabRow
 import com.appdex.ui.theme.*
 
 @Composable
@@ -39,9 +39,9 @@ fun RemoteScreen(
 
     Box(modifier = Modifier.fillMaxSize().background(DeepSpaceBlue)) {
         Column(modifier = Modifier.fillMaxSize()) {
-            AppDexBar(title = "远程管理", back = true, onBack = onBack)
+            AppXBar(title = "远程管理", back = true, onBack = onBack)
 
-            AppDexTabRow(
+            AppXTabRow(
                 selectedTabIndex = selectedTab,
                 tabs = tabs,
                 onTabSelected = { selectedTab = it }

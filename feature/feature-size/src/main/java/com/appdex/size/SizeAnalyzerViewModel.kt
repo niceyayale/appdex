@@ -1,4 +1,4 @@
-package com.appdex.size
+﻿package com.appdex.size
 
 import android.util.Log
 
@@ -53,7 +53,7 @@ class SizeAnalyzerViewModel @Inject constructor(
                 update { it.copy(isAnalyzing = false, result = result) }
                 emitEffect(SizeAnalyzerEffect.AnalyzeComplete(result))
             } catch (e: Exception) {
-                Log.w("AppDex", "Suppressed exception", e)
+                Log.w("AppX", "Suppressed exception", e)
                 update { it.copy(isAnalyzing = false, error = e.message ?: "分析失败") }
                 emitEffect(SizeAnalyzerEffect.ShowError(e.message ?: "分析失败"))
             }

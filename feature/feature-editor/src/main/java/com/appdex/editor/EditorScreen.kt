@@ -1,7 +1,10 @@
-package com.appdex.editor
+﻿package com.appdex.editor
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,6 +21,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.HorizontalDivider
@@ -46,8 +50,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.appdex.syntax.SyntaxHighlighter
-import com.appdex.ui.components.AppDexBar
-import com.appdex.ui.components.AppDexSnackbarHost
+import com.appdex.ui.components.AppXBar
+import com.appdex.ui.components.AppXCopilotPanel
+import com.appdex.ui.components.AppXSnackbarHost
 import com.appdex.ui.components.EmptyState
 import com.appdex.ui.components.LoadingState
 import com.appdex.ui.theme.*
@@ -89,12 +94,24 @@ fun EditorScreen(
 
     Box(modifier = Modifier.fillMaxSize().background(DeepSpaceBlue)) {
         Column(modifier = Modifier.fillMaxSize()) {
-            AppDexBar(
+            AppXBar(
                 title = state.fileName ?: "编辑器",
                 subtitle = if (state.isModified) "未保存修改" else null,
                 back = true,
                 onBack = onBack,
                 actions = {
+                    // Copilot toggle
+                    if (state.fileName != null) {
+                        IconButton(onClick = {
+                            viewModel.handleIntent(EditorIntent.ToggleCopilot)
+                        }) {
+                            Icon(
+                                Icons.Default.AutoAwesome,
+                                contentDescription = "Copilot",
+                                tint = if (state.isCopilotVisible) AmberGold else AmberGold.copy(alpha = 0.5f)
+                            )
+                        }
+                    }
                     IconButton(onClick = {
                         openFileLauncher.launch(arrayOf("text/*", "application/json", "application/xml", "application/javascript"))
                     }) {
@@ -108,6 +125,20 @@ fun EditorScreen(
                     }
                 }
             )
+
+            // Copilot Panel — appears below the app bar when visible
+            AnimatedVisibility(
+                visible = state.isCopilotVisible,
+                enter = expandVertically(),
+                exit = shrinkVertically()
+            ) {
+                AppXCopilotPanel(
+                    fileName = state.fileName ?: "",
+                    insights = state.copilotInsights,
+                    isLoading = state.isCopilotLoading,
+                    onDismiss = { viewModel.handleIntent(EditorIntent.DismissCopilot) }
+                )
+            }
 
             if (state.isLoading) {
                 LoadingState()
@@ -200,7 +231,7 @@ fun EditorScreen(
             }
         }
 
-        AppDexSnackbarHost(
+        AppXSnackbarHost(
             hostState = snackbarHostState,
             modifier = Modifier.align(Alignment.BottomCenter)
         )

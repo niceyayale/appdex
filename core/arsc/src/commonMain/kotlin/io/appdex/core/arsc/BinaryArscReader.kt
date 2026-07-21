@@ -1,4 +1,4 @@
-package io.appdex.core.arsc
+﻿package io.appdex.core.arsc
 
 import io.appdex.core.arsc.chunk.TableChunkType
 import io.appdex.core.io.ByteReader

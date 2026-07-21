@@ -1,4 +1,4 @@
-package com.appdex.signing
+﻿package com.appdex.signing
 
 import android.util.Log
 
@@ -13,6 +13,7 @@ import javax.inject.Inject
 @HiltViewModel
 class SigningViewModel @Inject constructor(
     private val signingRepository: SigningRepository,
+    private val workspaceEventBus: com.appdex.data.workspace.WorkspaceEventBus,
 ) : BaseViewModel<SigningIntent, SigningState, SigningEffect>(
     initialState = SigningState()
 ) {
@@ -61,7 +62,7 @@ class SigningViewModel @Inject constructor(
                     update { it.copy(selectedAlias = entries[0].alias, step = SigningStep.SIGN_OPTIONS) }
                 }
             } catch (e: Exception) {
-                Log.w("AppDex", "Suppressed exception", e)
+                Log.w("AppX", "Suppressed exception", e)
                 val msg = e.message ?: "加载 Keystore 失败"
                 update { it.copy(error = msg) }
                 emitEffect(SigningEffect.ShowError(msg))
@@ -75,7 +76,7 @@ class SigningViewModel @Inject constructor(
                 val entries = signingRepository.listKeystoreEntries(path, password)
                 update { it.copy(keystoreEntries = entries, error = null) }
             } catch (e: Exception) {
-                Log.w("AppDex", "Suppressed exception", e)
+                Log.w("AppX", "Suppressed exception", e)
                 val msg = e.message ?: "列出条目失败"
                 update { it.copy(error = msg) }
                 emitEffect(SigningEffect.ShowError(msg))
@@ -104,8 +105,10 @@ class SigningViewModel @Inject constructor(
                     )
                 }
                 emitEffect(SigningEffect.SigningComplete(result))
+                // Phase 4: Emit SignCompleted event to Workspace OS
+                workspaceEventBus.emit(com.appdex.data.workspace.WorkspaceEvent.SignCompleted(outputPath))
             } catch (e: Exception) {
-                Log.w("AppDex", "Suppressed exception", e)
+                Log.w("AppX", "Suppressed exception", e)
                 val msg = e.message ?: "签名失败"
                 update { it.copy(isSigning = false, error = msg, step = SigningStep.SIGN_OPTIONS) }
                 emitEffect(SigningEffect.ShowError(msg))
@@ -138,7 +141,7 @@ class SigningViewModel @Inject constructor(
                 }
                 emitEffect(SigningEffect.ShowToast("Keystore 创建成功"))
             } catch (e: Exception) {
-                Log.w("AppDex", "Suppressed exception", e)
+                Log.w("AppX", "Suppressed exception", e)
                 val msg = e.message ?: "创建 Keystore 失败"
                 update { it.copy(isCreatingKeystore = false, error = msg) }
                 emitEffect(SigningEffect.ShowError(msg))

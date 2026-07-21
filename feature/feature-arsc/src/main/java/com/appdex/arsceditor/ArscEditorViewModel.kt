@@ -1,4 +1,4 @@
-package com.appdex.arsceditor
+﻿package com.appdex.arsceditor
 
 import android.util.Log
 
@@ -65,7 +65,7 @@ class ArscEditorViewModel @Inject constructor(
                 val result = repository.parseFromApk(apkPath)
                 update { it.copy(packages = result.packages, isLoading = false) }
             } catch (e: Exception) {
-                Log.w("AppDex", "Suppressed exception", e)
+                Log.w("AppX", "Suppressed exception", e)
                 update { it.copy(isLoading = false, error = e.message) }
                 emitEffect(ArscEditorEffect.ShowMessage("解析失败: ${e.message}"))
             }
@@ -79,7 +79,7 @@ class ArscEditorViewModel @Inject constructor(
                 val result = repository.parse(bytes)
                 update { it.copy(packages = result.packages, isLoading = false) }
             } catch (e: Exception) {
-                Log.w("AppDex", "Suppressed exception", e)
+                Log.w("AppX", "Suppressed exception", e)
                 update { it.copy(isLoading = false, error = e.message) }
                 emitEffect(ArscEditorEffect.ShowMessage("解析失败: ${e.message}"))
             }

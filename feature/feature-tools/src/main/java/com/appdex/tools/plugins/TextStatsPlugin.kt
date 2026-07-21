@@ -1,4 +1,4 @@
-package com.appdex.tools.plugins
+﻿package com.appdex.tools.plugins
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -25,14 +25,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.appdex.plugin.AppDexPlugin
+import com.appdex.plugin.AppXPlugin
 import com.appdex.plugin.PluginCategory
 
-class TextStatsPlugin : AppDexPlugin {
+class TextStatsPlugin : AppXPlugin {
     override val id = "text_stats"
     override val name = "Text Statistics"
     override val description = "Count characters, words, lines, and reading time"
-    override val author = "APPDEX"
+    override val author = "AppX"
     override val version = "1.0.0"
     override val category = PluginCategory.ANALYZE
 

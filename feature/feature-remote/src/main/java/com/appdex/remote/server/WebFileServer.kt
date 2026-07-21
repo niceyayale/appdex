@@ -1,4 +1,4 @@
-package com.appdex.remote.server
+﻿package com.appdex.remote.server
 
 import android.content.Context
 import java.io.BufferedReader
@@ -63,7 +63,7 @@ class WebFileServer(
 
     fun stop() {
         running = false
-        try { serverSocket?.close() } catch (e: Exception) { Log.w("AppDex", "Suppressed exception", e) }
+        try { serverSocket?.close() } catch (e: Exception) { Log.w("AppX", "Suppressed exception", e) }
         serverSocket = null
         executor.shutdownNow()
     }
@@ -133,7 +133,7 @@ class WebFileServer(
         } catch (e: Exception) {
             Log.e("WebFileServer", "Client handler error: ${e.message}", e)
         } finally {
-            try { socket.close() } catch (e: Exception) { Log.w("AppDex", "Suppressed exception", e) }
+            try { socket.close() } catch (e: Exception) { Log.w("AppX", "Suppressed exception", e) }
         }
     }
 
@@ -213,7 +213,7 @@ class WebFileServer(
         val sb = StringBuilder()
         sb.append("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\">")
         sb.append("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">")
-        sb.append("<title>APPDEX File Server</title>")
+        sb.append("<title>AppX File Server</title>")
         sb.append("<style>")
         sb.append("*{margin:0;padding:0;box-sizing:border-box}")
         sb.append("body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f0f2f5;color:#1a1a2e}")
@@ -240,7 +240,7 @@ class WebFileServer(
         sb.append(".footer{text-align:center;padding:16px;font-size:12px;color:#aaa}")
         sb.append("</style></head><body>")
 
-        sb.append("<div class=\"header\"><h1>APPDEX File Server</h1><p>Remote file management — Port $port</p></div>")
+        sb.append("<div class=\"header\"><h1>AppX File Server</h1><p>Remote file management — Port $port</p></div>")
         sb.append("<div class=\"container\">")
 
         // Breadcrumb
@@ -292,7 +292,7 @@ class WebFileServer(
         sb.append("</form>")
         sb.append("</div>")
 
-        sb.append("<div class=\"footer\">APPDEX • Open Source Android Toolkit</div>")
+        sb.append("<div class=\"footer\">AppX • Open Source Android Toolkit</div>")
         sb.append("</div></body></html>")
 
         return sb.toString()

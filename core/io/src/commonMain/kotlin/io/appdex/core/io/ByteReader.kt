@@ -1,4 +1,4 @@
-package io.appdex.core.io
+﻿package io.appdex.core.io
 
 /**
  * 在 [SeekableChannel] 之上提供 little-endian 字节读取工具。

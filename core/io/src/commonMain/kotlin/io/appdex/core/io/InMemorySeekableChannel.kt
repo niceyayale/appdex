@@ -1,4 +1,4 @@
-package io.appdex.core.io
+﻿package io.appdex.core.io
 
 /**
  * 内存中的 [SeekableChannel] 实现。用 [ByteArray] 存储,可增长。

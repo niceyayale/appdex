@@ -1,4 +1,4 @@
-package com.appdex.common
+﻿package com.appdex.common
 
 import android.util.Log
 
@@ -12,7 +12,7 @@ inline fun <T> runCatchingResult(block: () -> T): Result<T> {
     return try {
         Result.Success(block())
     } catch (e: Exception) {
-        Log.w("AppDex", "Suppressed exception", e)
+        Log.w("AppX", "Suppressed exception", e)
         Result.Error(e.message ?: "Unknown error", e)
     }
 }

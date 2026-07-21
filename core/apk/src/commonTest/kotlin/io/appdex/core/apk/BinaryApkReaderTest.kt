@@ -1,4 +1,4 @@
-package io.appdex.core.apk
+﻿package io.appdex.core.apk
 
 import io.appdex.core.apk.zip.ZipSample
 import io.appdex.core.io.InMemorySeekableChannel

@@ -1,4 +1,4 @@
-package io.appdex.core.axml
+﻿package io.appdex.core.axml
 
 /**
  * AXML 读取结果:解析后的 XML 文本。

@@ -20,7 +20,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "APPDEX"
+rootProject.name = "AppX"
 
 // ── App ──
 include(":app")

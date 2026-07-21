@@ -1,4 +1,4 @@
-package com.appdex.axmleditor
+﻿package com.appdex.axmleditor
 
 import android.util.Log
 
@@ -58,7 +58,7 @@ class AxmlEditorViewModel @Inject constructor(
                 val xml = repository.decodeFromApk(apkPath, entryName)
                 update { it.copy(xmlText = xml, isLoading = false) }
             } catch (e: Exception) {
-                Log.w("AppDex", "Suppressed exception", e)
+                Log.w("AppX", "Suppressed exception", e)
                 update { it.copy(isLoading = false, parseError = e.message ?: "Failed to decode AXML") }
                 emitEffect(AxmlEditorEffect.ShowMessage("解码失败: ${e.message}"))
             }
@@ -72,7 +72,7 @@ class AxmlEditorViewModel @Inject constructor(
                 val xml = repository.decode(bytes)
                 update { it.copy(xmlText = xml, isLoading = false) }
             } catch (e: Exception) {
-                Log.w("AppDex", "Suppressed exception", e)
+                Log.w("AppX", "Suppressed exception", e)
                 update { it.copy(isLoading = false, parseError = e.message ?: "Failed to decode AXML") }
                 emitEffect(AxmlEditorEffect.ShowMessage("解码失败: ${e.message}"))
             }
@@ -94,7 +94,7 @@ class AxmlEditorViewModel @Inject constructor(
                 }
                 emitEffect(AxmlEditorEffect.ShowMessage("编码成功 (${binary.size} bytes)"))
             } catch (e: Exception) {
-                Log.w("AppDex", "Suppressed exception", e)
+                Log.w("AppX", "Suppressed exception", e)
                 update { it.copy(isLoading = false, parseError = e.message) }
                 emitEffect(AxmlEditorEffect.ShowMessage("编码失败: ${e.message}"))
             }

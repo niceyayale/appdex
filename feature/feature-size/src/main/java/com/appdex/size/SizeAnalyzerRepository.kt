@@ -1,4 +1,4 @@
-package com.appdex.size
+﻿package com.appdex.size
 
 import java.io.File
 import java.util.zip.ZipFile

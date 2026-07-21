@@ -1,4 +1,4 @@
-package io.appdex.core.arsc
+﻿package io.appdex.core.arsc
 
 /**
  * ARSC 解析结果。

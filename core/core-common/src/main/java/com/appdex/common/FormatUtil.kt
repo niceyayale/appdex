@@ -1,4 +1,4 @@
-package com.appdex.common
+﻿package com.appdex.common
 
 import java.text.DecimalFormat
 

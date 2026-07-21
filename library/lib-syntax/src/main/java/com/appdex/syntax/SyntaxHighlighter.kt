@@ -1,4 +1,4 @@
-package com.appdex.syntax
+﻿package com.appdex.syntax
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
@@ -27,7 +27,7 @@ object SyntaxHighlighter {
         val style: SpanStyle
     )
 
-    // ── Color palette (referencing AppDex DesignSystem) ──
+    // ── Color palette (referencing AppX DesignSystem) ──
     private val keywordColor = AmberGold
     private val stringColor = AuroraGreen
     private val numberColor = Color(0xFFB794F6)        // Soft purple (syntax-specific, not in DesignSystem)

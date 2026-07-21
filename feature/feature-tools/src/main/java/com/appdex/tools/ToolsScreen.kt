@@ -1,4 +1,4 @@
-package com.appdex.tools
+﻿package com.appdex.tools
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -55,12 +55,12 @@ import com.appdex.tools.plugins.JsonFormatterPlugin
 import com.appdex.tools.plugins.PluginListScreen
 import com.appdex.tools.plugins.TextStatsPlugin
 import com.appdex.tools.plugins.TimestampConverterPlugin
-import com.appdex.ui.components.AppDexBar
-import com.appdex.ui.components.AppDexDivider
-import com.appdex.ui.components.AppDexRow
-import com.appdex.ui.components.AppDexSection
+import com.appdex.ui.components.AppXBar
+import com.appdex.ui.components.AppXDivider
+import com.appdex.ui.components.AppXRow
+import com.appdex.ui.components.AppXSection
 import com.appdex.data.session.ToolDisplayMode
-import com.appdex.ui.theme.AppDexTheme
+import com.appdex.ui.theme.AppXTheme
 import com.appdex.ui.theme.*
 
 // ── Tool definition for search/filter ──
@@ -87,6 +87,7 @@ fun ToolsScreen(
     onOpenArscViewer: () -> Unit = {},
     onOpenSqliteViewer: () -> Unit = {},
     onOpenElfViewer: () -> Unit = {},
+    onOpenHexEditor: () -> Unit = {},
     displayMode: ToolDisplayMode = ToolDisplayMode.NORMAL
 ) {
     fun toolName(friendly: String, original: String): String = when (displayMode) {
@@ -129,7 +130,8 @@ fun ToolsScreen(
             ToolEntry("插件中心", "Plugins", "${PluginManager.count} 个插件可用", Icons.Default.Extension, "系统工具", "插件 plugin 扩展 extension", "plugins"),
             ToolEntry("哈希计算器", "Hash", "MD5、SHA-1、SHA-256", Icons.Default.Fingerprint, "实用工具", "哈希 hash md5 sha", "hash"),
             ToolEntry("设备信息", "DeviceInfo", "硬件与系统信息", Icons.Default.Devices, "实用工具", "设备 device info 硬件", "device_info"),
-            ToolEntry("编码转换", "Encoding", "Base64、URL、Hex", Icons.Default.TextFields, "实用工具", "编码 encoding base64 url hex 转换", "encoding")
+            ToolEntry("编码转换", "Encoding", "Base64、URL、Hex", Icons.Default.TextFields, "实用工具", "编码 encoding base64 url hex 转换", "encoding"),
+            ToolEntry("二进制查看", "HEX Editor", "十六进制查看与编辑", Icons.Default.Code, "开发工具", "hex 十六进制 二进制 binary 查看 编辑", "hex")
         )
     }
 
@@ -154,7 +156,7 @@ fun ToolsScreen(
         filteredTools.groupBy { it.section }
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(AppDexTheme.colors.background)) {
+    Box(modifier = Modifier.fillMaxSize().background(AppXTheme.colors.background)) {
         when {
             showPluginList -> {
                 PluginListScreen(
@@ -187,7 +189,7 @@ fun ToolsScreen(
                     ),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    item { AppDexBar(title = "工具集", back = true, onBack = onBack) }
+                    item { AppXBar(title = "工具集", back = true, onBack = onBack) }
 
                     // ── Search Bar ──
                     item {
@@ -272,7 +274,7 @@ fun ToolsScreen(
                     } else {
                         groupedTools.forEach { (sectionName, tools) ->
                             item(key = sectionName) {
-                                AppDexSection(label = sectionName) {
+                                AppXSection(label = sectionName) {
                                     Column(modifier = Modifier.border(1.dp, BorderLight)) {
                                         tools.forEachIndexed { index, tool ->
                                             val toolTitle = toolName(tool.friendlyName, tool.originalName)
@@ -295,10 +297,11 @@ fun ToolsScreen(
                                                 "hash" -> { { selectedTool = ToolType.HASH_CALCULATOR } }
                                                 "device_info" -> { { selectedTool = ToolType.DEVICE_INFO } }
                                                 "encoding" -> { { selectedTool = ToolType.ENCODING_CONVERTER } }
+                                                "hex" -> onOpenHexEditor
                                                 else -> { {} }
                                             }
-                                            if (index > 0) AppDexDivider()
-                                            AppDexRow(
+                                            if (index > 0) AppXDivider()
+                                            AppXRow(
                                                 icon = tool.icon,
                                                 title = toolTitle,
                                                 detail = tool.detail,
@@ -343,9 +346,9 @@ private fun PluginDetailScreen(
     entry: PluginEntry,
     onBack: () -> Unit
 ) {
-    Box(modifier = Modifier.fillMaxSize().background(AppDexTheme.colors.background)) {
+    Box(modifier = Modifier.fillMaxSize().background(AppXTheme.colors.background)) {
         Column(modifier = Modifier.fillMaxSize()) {
-            AppDexBar(title = entry.plugin.name, back = true, onBack = onBack)
+            AppXBar(title = entry.plugin.name, back = true, onBack = onBack)
             Box(modifier = Modifier.fillMaxSize()) {
                 entry.plugin.Content()
             }

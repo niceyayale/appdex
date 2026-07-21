@@ -1,4 +1,4 @@
-package com.appdex.data
+﻿package com.appdex.data
 
 import com.appdex.db.BookmarkDao
 import com.appdex.db.BookmarkEntity

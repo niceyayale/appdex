@@ -1,4 +1,4 @@
-package com.appdex.remote.server
+﻿package com.appdex.remote.server
 
 import android.util.Log
 import android.content.Context
@@ -81,7 +81,7 @@ fun WebServerScreen(
                 ipAddress shr 16 and 0xff,
                 ipAddress shr 24 and 0xff
             )
-        } catch (e: Exception) { Log.w("AppDex", "Suppressed exception", e); 
+        } catch (e: Exception) { Log.w("AppX", "Suppressed exception", e); 
             "127.0.0.1"
          }
     }
@@ -103,7 +103,7 @@ fun WebServerScreen(
             statusMessage = if (token != null) "Running on $serverUrl (auth enabled)" else "Running on $serverUrl"
             qrBitmap = QrCodeGenerator.generate(serverUrl, 512)
         } catch (e: Exception) {
-            Log.w("AppDex", "Suppressed exception", e)
+            Log.w("AppX", "Suppressed exception", e)
             statusMessage = "Error: ${e.message}"
         }
     }

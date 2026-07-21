@@ -1,9 +1,16 @@
-package com.appdex.data.toolbridge
+﻿package com.appdex.data.toolbridge
 
 import com.appdex.apk.ApkInfo
 import com.appdex.data.session.AnalysisSession
 import com.appdex.data.session.FindingSeverity
 import com.appdex.data.session.AnalysisFinding
+import com.appdex.data.session.RiskScoreCalculator
+import com.appdex.data.workspace.Workspace
+import com.appdex.data.workspace.WorkspaceContext
+import com.appdex.data.workspace.WorkspacePanel
+import com.appdex.data.workspace.Goal
+
+import com.appdex.data.session.SessionManager
 
 /**
  * ToolBridge - AI 与工具之间的桥梁
@@ -34,20 +41,27 @@ object ToolBridge {
         "android.permission.INSTALL_PACKAGES", "android.permission.DELETE_PACKAGES"
     )
 
-    // ── AI System Prompt — Copilot 模式 ──
+    // ── AI System Prompt — Workspace-aware Copilot 模式 ──
 
-    fun buildSystemPrompt(session: AnalysisSession?): String = """
-        你是 AppDex AI Copilot，一个专业的 Android APK 分析助手。
+    fun buildSystemPrompt(session: AnalysisSession?): String = buildWorkspaceAwareSystemPrompt(session?.let { Workspace(session = it) })
+
+    /**
+     * Workspace-aware system prompt — AI as the OS.
+     * AI understands: current APK, workspace, editor, file, goal, history.
+     */
+    fun buildWorkspaceAwareSystemPrompt(workspace: Workspace?): String = """
+        你是 AppX AI — Android 应用分析工作区的智能操作系统。
 
         ## 你的角色
-        你不是聊天机器人。你是用户的 APK 分析伙伴。
-        用户可能完全不懂逆向工程。你的工作是用自然语言帮助他们理解 APK。
+        你不是聊天机器人。你是用户的工作区伙伴。
+        用户可能完全不懂逆向工程。你的工作是用自然语言帮助他们理解和修改 APK。
 
         ## 你的能力
         1. 用通俗易懂的语言解释 APK 分析结果
         2. 给出安全风险评估和实用建议
         3. 根据用户需求推荐下一步操作
         4. 在回答中附带 Action Card 让用户直接进入对应工具
+        5. 理解用户当前的工作区上下文（正在查看的文件、目标、历史）
 
         ## 重要规则
         - 你可以：解释、定位、分析、指出修改位置、生成补丁建议
@@ -56,12 +70,21 @@ object ToolBridge {
         - 如果分析数据不可用，引导用户先选择 APK 进行分析
         - 用类比和通俗解释代替专业术语
 
-        ## 回答格式
-        - 正常回复用普通文本
-        - 推荐工具时，在回复末尾添加 Action Card:
+        ## 回答格式 — 结构化响应
+        每次回复都应该是结构化的：
+        1. 总结：一句话概括
+        2. 原因：详细解释
+        3. 风险：风险评估（如果有）
+        4. 建议：下一步操作建议
+        5. Action Cards：可执行的操作卡片
+
+        推荐工具时，在回复末尾添加 Action Card:
           [ACTION:标题|描述|图标类型|路由]
-        - 图标类型: security, code, key, folder, terminal, edit, compare, database, memory, scan, hex
-        - 路由: permissions, dex, signing, repack, security, size, axml, arsc, sqlite, elf, editor, terminal, files
+        图标类型: security, code, key, folder, terminal, edit, compare, database, memory, scan, hex
+        路由: permissions, dex, signing, repack, security, size, axml, arsc, sqlite, elf, editor, terminal, files
+
+        ## 工作区上下文
+        ${if (workspace != null) "当前工作区: ${workspace.displayName}\n当前面板: ${workspace.context.activePanel}\n当前目标: ${workspace.context.activeGoal?.title ?: "无"}" else "当前无工作区"}
 
         ## 用户意图识别
         当用户说"看看有没有广告"时，分析 SDK 和代码中的广告组件
@@ -72,15 +95,102 @@ object ToolBridge {
         当用户说"我想查看代码"时，引导到代码浏览器
     """.trimIndent()
 
+    /**
+     * RC4: Build system prompt with live workspace context.
+     * AI knows exactly what the user just did.
+     */
+    fun buildSystemPrompt(session: AnalysisSession?, liveContext: SessionManager.LiveWorkspaceContext?): String {
+        if (session == null) return buildWorkspaceAwareSystemPrompt(null)
+        val base = buildWorkspaceAwareSystemPrompt(Workspace(session = session))
+        if (liveContext == null) return base
+
+        val contextSection = buildString {
+            appendLine("\n## 用户最近活动（Workspace Memory）")
+            if (liveContext.activePanel.isNotEmpty()) {
+                appendLine("当前所在面板: ${liveContext.activePanel}")
+            }
+            liveContext.activeFilePath?.let { appendLine("当前文件: $it") }
+            liveContext.activeSelection?.let { appendLine("当前选中: $it") }
+            if (liveContext.recentActions.isNotEmpty()) {
+                appendLine("最近操作:")
+                liveContext.recentActions.take(5).forEachIndexed { i, action ->
+                    appendLine("  ${i + 1}. $action")
+                }
+            }
+            if (liveContext.timeline.isNotEmpty()) {
+                appendLine("工作区时间线:")
+                liveContext.timeline.takeLast(5).forEach { event ->
+                    val time = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()).format(java.util.Date(event.timestamp))
+                    appendLine("  $time ${event.title}${event.detail?.let { " - $it" } ?: ""}")
+                }
+            }
+            appendLine("\n## 重要：引用上下文")
+            appendLine("在回复中，自然地引用用户的最近操作和当前选中内容。")
+            appendLine("例如：'我看到你刚刚查看了 ${liveContext.activeSelection ?: "Manifest"}...' 或 '你刚才打开了 ${liveContext.activePanel}...' ")
+            appendLine("不要像聊天机器人一样问'你想做什么'，而是基于上下文直接提供洞察。")
+        }
+
+        return base + contextSection
+    }
+
     // ── Context Builder — Token 控制 + 深度上下文 ──
 
     fun buildContext(session: AnalysisSession?, maxTokens: Int = 3000): String {
-        if (session?.apkInfo == null) {
+        return buildWorkspaceContext(session?.let { Workspace(session = it) }, maxTokens)
+    }
+
+    /**
+     * RC4: Build context with live workspace context.
+     */
+    fun buildContext(session: AnalysisSession?, liveContext: SessionManager.LiveWorkspaceContext?, maxTokens: Int = 3000): String {
+        val base = buildWorkspaceContext(session?.let { Workspace(session = it) }, maxTokens)
+        if (liveContext == null) return base
+
+        val liveSection = buildString {
+            appendLine()
+            appendLine("=== 用户当前活动 ===")
+            if (liveContext.activePanel.isNotEmpty()) {
+                appendLine("当前面板: ${liveContext.activePanel}")
+            }
+            liveContext.activeFilePath?.let { appendLine("当前文件: $it") }
+            liveContext.activeSelection?.let { appendLine("当前选中: $it") }
+            if (liveContext.recentActions.isNotEmpty()) {
+                appendLine("最近操作: ${liveContext.recentActions.take(5).joinToString(" → ")}")
+            }
+            if (liveContext.timeline.isNotEmpty()) {
+                appendLine("时间线: ${liveContext.timeline.takeLast(5).joinToString(" → ") { it.title }}")
+            }
+        }
+
+        return base + liveSection
+    }
+
+    /**
+     * Workspace-aware context builder — includes workspace state, goals, and active file.
+     */
+    fun buildWorkspaceContext(workspace: Workspace?, maxTokens: Int = 3000): String {
+        if (workspace == null || workspace.session.apkInfo == null) {
             return "当前没有已分析的 APK。请引导用户选择 APK 文件。"
         }
 
-        val info = session.apkInfo
+        val session = workspace.session
+        val info = session.apkInfo!!
         val sb = StringBuilder()
+
+        // Workspace context
+        sb.appendLine("=== 工作区上下文 ===")
+        sb.appendLine("工作区名称: ${workspace.displayName}")
+        sb.appendLine("工作区状态: ${workspace.state}")
+        sb.appendLine("当前面板: ${workspace.context.activePanel}")
+        workspace.context.activeFilePath?.let { sb.appendLine("当前文件: $it") }
+        workspace.context.activeGoal?.let { sb.appendLine("当前目标: ${it.title}") }
+        if (workspace.context.recentActions.isNotEmpty()) {
+            sb.appendLine("最近操作: ${workspace.context.recentActions.joinToString(", ")}")
+        }
+        if (workspace.timeline.isNotEmpty()) {
+            sb.appendLine("时间线: ${workspace.timeline.takeLast(5).joinToString(" → ") { it.title }}")
+        }
+        sb.appendLine()
 
         sb.appendLine("=== APK 分析数据 ===")
         sb.appendLine("包名: ${info.manifest.packageName.ifEmpty { "未知" }}")
@@ -157,7 +267,7 @@ object ToolBridge {
             if (soNames.any { it.contains("libapp", true) }) detectedSDKs.add("Flutter")
             if (soNames.any { it.contains("libreactnative", true) || it.contains("libhermes", true) }) detectedSDKs.add("React Native")
             if (soNames.any { it.contains("libil2cpp", true) }) detectedSDKs.add("Unity (IL2CPP)")
-            if (soNames.any { it.contains("libunity", true) }) detectedSDKS_add(detectedSDKs, "Unity")
+            if (soNames.any { it.contains("libunity", true) }) detectedSDKs.add("Unity")
             if (soNames.any { it.contains("libUE4", true) || it.contains("libUnreal", true) }) detectedSDKs.add("Unreal Engine")
             if (soNames.any { it.contains("libweex", true) }) detectedSDKs.add("Weex")
             if (detectedSDKs.isNotEmpty()) {
@@ -188,13 +298,10 @@ object ToolBridge {
         return sb.toString()
     }
 
-    private fun detectedSDKS_add(set: MutableSet<String>, s: String) { set.add(s) }
-
     // ── Auto-Generate Findings ──
 
     fun generateFindings(info: ApkInfo): Pair<List<AnalysisFinding>, Int> {
         val findings = mutableListOf<AnalysisFinding>()
-        var score = 100
 
         // 1. 危险权限
         val dangerousPerms = info.manifest.permissions.filter { it in DANGEROUS_PERMISSIONS }
@@ -214,7 +321,6 @@ object ToolBridge {
                 recommendation = "检查这些权限是否为应用核心功能所必需",
                 toolAction = "permissions"
             ))
-            score -= minOf(dangerousPerms.size * 4, 32)
         }
 
         // 2. 签名
@@ -227,7 +333,6 @@ object ToolBridge {
                 recommendation = "需要先对 APK 进行签名才能安装",
                 toolAction = "signing"
             ))
-            score -= 25
         } else {
             val hasV2 = info.signatures.any { it.version >= 2 }
             if (!hasV2) {
@@ -239,7 +344,6 @@ object ToolBridge {
                     recommendation = "建议使用 V2+ 签名方案以获得更好的安全保护",
                     toolAction = "signing"
                 ))
-                score -= 10
             }
         }
 
@@ -252,7 +356,6 @@ object ToolBridge {
                 description = "应用支持最低 Android ${info.manifest.minSdk}，可能存在安全风险",
                 recommendation = "低系统版本可能使用不安全的 API"
             ))
-            score -= 12
         }
 
         // 4. 权限过多
@@ -265,7 +368,6 @@ object ToolBridge {
                 recommendation = "审查权限列表，移除不必要的权限",
                 toolAction = "permissions"
             ))
-            score -= 8
         }
 
         // 5. 文件结构
@@ -303,34 +405,29 @@ object ToolBridge {
             ))
         }
 
-        // 6. 总结
-        if (score >= 80) {
-            findings.add(AnalysisFinding(
-                severity = FindingSeverity.INFO,
-                category = "总结",
-                title = "安全评估：低风险",
-                description = "此应用安全评分为 $score/100，整体风险较低",
-                recommendation = "可以正常使用，但仍建议关注权限请求"
-            ))
-        } else if (score >= 60) {
-            findings.add(AnalysisFinding(
-                severity = FindingSeverity.LOW,
-                category = "总结",
-                title = "安全评估：中风险",
-                description = "此应用安全评分为 $score/100，存在一定风险",
-                recommendation = "建议仔细检查权限和签名"
-            ))
-        } else {
-            findings.add(AnalysisFinding(
-                severity = FindingSeverity.HIGH,
-                category = "总结",
-                title = "安全评估：高风险",
-                description = "此应用安全评分为 $score/100，存在较高风险",
-                recommendation = "不建议安装使用，建议详细分析"
-            ))
-        }
+        // 6. 统一计算评分 — 使用 RiskScoreCalculator（唯一来源）
+        val score = RiskScoreCalculator.calculate(findings)
 
-        return Pair(findings, score.coerceIn(0, 100))
+        // 7. 添加总结发现（不影响评分，仅展示）
+        val riskLevel = RiskScoreCalculator.getRiskLevel(score)
+        val summarySeverity = when {
+            score >= 80 -> FindingSeverity.INFO
+            score >= 60 -> FindingSeverity.LOW
+            else -> FindingSeverity.HIGH
+        }
+        findings.add(AnalysisFinding(
+            severity = summarySeverity,
+            category = "总结",
+            title = "安全评估：$riskLevel",
+            description = "此应用安全评分为 $score/100，$riskLevel",
+            recommendation = when {
+                score >= 80 -> "可以正常使用，但仍建议关注权限请求"
+                score >= 60 -> "建议仔细检查权限和签名"
+                else -> "不建议安装使用，建议详细分析"
+            }
+        ))
+
+        return Pair(findings, score)
     }
 
     // ── AI Suggested Questions ──
@@ -347,7 +444,7 @@ object ToolBridge {
             listOf(
                 "分析一个 APK" to "选择 APK 文件开始分析",
                 "扫描已安装应用" to "从设备中选择应用",
-                "AppDex 能做什么？" to "了解 AppDex 功能",
+                "AppX 能做什么？" to "了解 AppX 功能",
                 "如何修改 APK？" to "查看修改指南"
             )
         }

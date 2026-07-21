@@ -48,7 +48,8 @@ data class AiChatResponse(
  * 1. [chat] — 同步请求，等待完整响应
  * 2. [chatStream] — SSE 流式响应，逐 token 返回
  */
-class AiService {
+@javax.inject.Singleton
+class AiService @javax.inject.Inject constructor() {
 
     /**
      * 发送聊天请求（同步模式）
@@ -84,16 +85,15 @@ class AiService {
                 AiProviderType.CUSTOM -> chatOpenAiCompatible(config, request)
             }
         } catch (e: Exception) {
-            Log.w("AppDex", "AI chat error", e)
-            AiChatResponse(content = "", success = false, error = e.message ?: "AI 请求失败")
+            Log.w("AppX", "AI chat error", e)
+            AiChatResponse(content = "", success = false, error = friendlyStreamError(e))
         }
     }
 
     /**
      * 发送聊天请求（流式模式）— 逐 token 返回内容
      *
-     * 对 OpenAI 兼容 / Anthropic / Ollama 使用 SSE 流式协议。
-     * Gemini 暂不支持流式，回退到同步模式。
+     * 对 OpenAI 兼容 / Anthropic / Gemini / Ollama 使用 SSE 流式协议。
      */
     fun chatStream(config: AiConfig, request: AiChatRequest): Flow<String> = callbackFlow {
         if (!config.isConfigured()) {
@@ -125,18 +125,24 @@ class AiService {
                 }
 
                 AiProviderType.GEMINI -> {
-                    // Gemini 流式复杂，回退同步
-                    val response = chatGemini(config, request)
-                    if (response.success) {
-                        trySend(response.content)
-                    } else {
-                        trySend("❌ ${response.error ?: "请求失败"}")
-                    }
+                    streamGemini(config, request) { chunk -> trySend(chunk) }
                 }
             }
+        } catch (e: java.net.SocketTimeoutException) {
+            Log.w("AppX", "AI stream timeout", e)
+            trySend(friendlyStreamError(e))
+        } catch (e: java.net.UnknownHostException) {
+            Log.w("AppX", "AI stream unknown host", e)
+            trySend(friendlyStreamError(e))
+        } catch (e: javax.net.ssl.SSLException) {
+            Log.w("AppX", "AI stream SSL error", e)
+            trySend(friendlyStreamError(e))
+        } catch (e: java.net.ConnectException) {
+            Log.w("AppX", "AI stream connect error", e)
+            trySend(friendlyStreamError(e))
         } catch (e: Exception) {
-            Log.w("AppDex", "AI stream error", e)
-            trySend("❌ 流式请求失败: ${e.message}")
+            Log.w("AppX", "AI stream error", e)
+            trySend(friendlyStreamError(e))
         } finally {
             channel.close()
         }
@@ -167,8 +173,8 @@ class AiService {
                 setRequestProperty("Authorization", "Bearer ${config.apiKey}")
             }
             if (config.providerType == AiProviderType.OPENROUTER) {
-                setRequestProperty("HTTP-Referer", "https://github.com/appdex")
-                setRequestProperty("X-Title", "AppDex")
+                setRequestProperty("HTTP-Referer", "https://github.com/AppX")
+                setRequestProperty("X-Title", "AppX")
             }
         }
 
@@ -301,6 +307,78 @@ class AiService {
         }
     }
 
+    private fun streamGemini(config: AiConfig, request: AiChatRequest, onChunk: (String) -> Unit) {
+        val model = config.modelName.ifEmpty { "gemini-2.0-flash" }
+        val url = URL("${config.effectiveBaseUrl().trimEnd('/')}/models/$model:streamGenerateContent?alt=sse&key=${config.apiKey}")
+        val connection = url.openConnection() as HttpURLConnection
+        connection.apply {
+            requestMethod = "POST"
+            connectTimeout = 30000
+            readTimeout = 300000
+            setRequestProperty("Content-Type", "application/json")
+            setRequestProperty("Accept", "text/event-stream")
+        }
+
+        val contents = request.messages.map { msg ->
+            buildJsonObject {
+                put("role", JsonPrimitive(if (msg.role == "assistant") "model" else "user"))
+                put("parts", buildJsonArray {
+                    add(buildJsonObject { put("text", JsonPrimitive(msg.content)) })
+                })
+            }
+        }
+
+        val requestBody = buildJsonObject {
+            put("contents", Json.encodeToJsonElement(contents))
+            if (request.systemPrompt.isNotEmpty()) {
+                put("systemInstruction", buildJsonObject {
+                    put("parts", buildJsonArray {
+                        add(buildJsonObject { put("text", JsonPrimitive(request.systemPrompt)) })
+                    })
+                })
+            }
+            put("generationConfig", buildJsonObject {
+                put("temperature", JsonPrimitive(request.temperature))
+                put("maxOutputTokens", JsonPrimitive(request.maxTokens))
+            })
+        }
+
+        connection.outputStream.use { it.write(requestBody.toString().toByteArray()) }
+
+        val responseCode = connection.responseCode
+        if (responseCode !in 200..299) {
+            val errorBody = connection.errorStream?.bufferedReader()?.use { it.readText() } ?: "HTTP $responseCode"
+            onChunk("❌ ${friendlyHttpError(responseCode, errorBody)}")
+            connection.disconnect()
+            return
+        }
+
+        val reader = BufferedReader(InputStreamReader(connection.inputStream))
+        try {
+            var line: String?
+            while (reader.readLine().also { line = it } != null) {
+                if (line.isNullOrEmpty()) continue
+                if (!line!!.startsWith("data: ")) continue
+                val data = line!!.removePrefix("data: ").trim()
+                if (data == "[DONE]") break
+                try {
+                    val json = Json.parseToJsonElement(data).jsonObject
+                    val text = json["candidates"]?.jsonArray?.firstOrNull()
+                        ?.jsonObject?.get("content")?.jsonObject?.get("parts")?.jsonArray
+                        ?.firstOrNull()?.jsonObject?.get("text")?.jsonPrimitive?.content
+                    if (!text.isNullOrEmpty()) {
+                        onChunk(text)
+                    }
+                } catch (e: Exception) {
+                    // 忽略解析错误的 SSE 行
+                }
+            }
+        } finally {
+            reader.close()
+            connection.disconnect()
+        }
+    }
+
     // ═══════════════════════════════════════════════════════════════
     // SSE 流式请求实现
     // ═══════════════════════════════════════════════════════════════
@@ -341,7 +419,7 @@ class AiService {
         val responseCode = connection.responseCode
         if (responseCode !in 200..299) {
             val errorBody = connection.errorStream?.bufferedReader()?.use { it.readText() } ?: "HTTP $responseCode"
-            onChunk("❌ 请求失败 (HTTP $responseCode): ${errorBody.take(200)}")
+            onChunk("❌ ${friendlyHttpError(responseCode, errorBody)}")
             connection.disconnect()
             return
         }
@@ -403,7 +481,7 @@ class AiService {
         val responseCode = connection.responseCode
         if (responseCode !in 200..299) {
             val errorBody = connection.errorStream?.bufferedReader()?.use { it.readText() } ?: "HTTP $responseCode"
-            onChunk("❌ 请求失败 (HTTP $responseCode): ${errorBody.take(200)}")
+            onChunk("❌ ${friendlyHttpError(responseCode, errorBody)}")
             connection.disconnect()
             return
         }
@@ -465,7 +543,7 @@ class AiService {
 
         val responseCode = connection.responseCode
         if (responseCode !in 200..299) {
-            onChunk("❌ 请求失败 (HTTP $responseCode)")
+            onChunk("❌ ${friendlyHttpError(responseCode, "")}")
             connection.disconnect()
             return
         }
@@ -494,6 +572,46 @@ class AiService {
     // HTTP 工具方法
     // ═══════════════════════════════════════════════════════════════
 
+    /**
+     * 将网络异常转换为用户友好的错误提示
+     */
+    private fun friendlyStreamError(e: Exception): String {
+        return when (e) {
+            is java.net.SocketTimeoutException -> "网络连接超时，请检查网络后重试"
+            is java.net.UnknownHostException -> "无法连接到 AI 服务，请检查网络连接"
+            is javax.net.ssl.SSLException -> "SSL 证书验证失败，请检查 API 地址是否正确"
+            is java.net.ConnectException -> "无法连接到服务器，请检查 API 地址和网络"
+            is java.io.IOException -> "网络连接异常，请稍后重试"
+            else -> "AI 请求失败，请稍后重试"
+        }
+    }
+
+    /**
+     * 测试 AI 连接（发送一个简单请求验证配置是否有效）
+     */
+    suspend fun testConnection(config: AiConfig): AiChatResponse = withContext(Dispatchers.IO) {
+        val testRequest = AiChatRequest(
+            messages = listOf(AiChatMessage(role = "user", content = "Hi")),
+            maxTokens = 5
+        )
+        chat(config, testRequest)
+    }
+
+    /**
+     * 将 HTTP 状态码和错误体转换为用户友好的错误提示
+     */
+    private fun friendlyHttpError(statusCode: Int, errorBody: String): String {
+        val truncatedBody = errorBody.take(300)
+        return when (statusCode) {
+            401 -> "API Key 无效或已过期，请在设置中检查密钥配置"
+            403 -> "访问被拒绝，可能是 API Key 权限不足或 IP 被限制"
+            404 -> "API 地址不正确或模型不存在，请检查 Base URL 和模型名称"
+            429 -> "请求过于频繁或额度已用尽，请稍后重试或检查账户余额"
+            500, 502, 503 -> "AI 服务器暂时不可用 (HTTP $statusCode)，请稍后重试"
+            else -> "请求失败 (HTTP $statusCode): $truncatedBody"
+        }
+    }
+
     private fun executeRequest(
         connection: HttpURLConnection,
         body: String,
@@ -509,6 +627,12 @@ class AiService {
             } else {
                 connection.errorStream?.bufferedReader()?.use { it.readText() } ?: "HTTP $responseCode"
             }
+        } catch (e: java.net.SocketTimeoutException) {
+            return AiChatResponse(content = "", success = false, error = "请求超时，请检查网络连接或稍后重试")
+        } catch (e: java.net.UnknownHostException) {
+            return AiChatResponse(content = "", success = false, error = "无法连接到服务器，请检查 API 地址和网络")
+        } catch (e: javax.net.ssl.SSLException) {
+            return AiChatResponse(content = "", success = false, error = "SSL 证书验证失败，请检查 API 地址是否正确")
         } catch (e: Exception) {
             return AiChatResponse(content = "", success = false, error = "网络请求失败: ${e.message}")
         } finally {
@@ -517,10 +641,14 @@ class AiService {
 
         return try {
             if (responseCode !in 200..299) {
-                val errorJson = Json.parseToJsonElement(responseBody).jsonObject
-                val errorMsg = errorJson["error"]?.jsonObject?.get("message")?.jsonPrimitive?.content
-                    ?: errorJson["error"]?.jsonPrimitive?.content
-                    ?: "HTTP $responseCode: $responseBody"
+                val errorMsg = try {
+                    val errorJson = Json.parseToJsonElement(responseBody).jsonObject
+                    errorJson["error"]?.jsonObject?.get("message")?.jsonPrimitive?.content
+                        ?: errorJson["error"]?.jsonPrimitive?.content
+                        ?: friendlyHttpError(responseCode, responseBody)
+                } catch (e: Exception) {
+                    friendlyHttpError(responseCode, responseBody)
+                }
                 AiChatResponse(content = "", success = false, error = errorMsg)
             } else {
                 val responseJson = Json.parseToJsonElement(responseBody).jsonObject

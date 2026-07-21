@@ -1,4 +1,4 @@
-package com.appdex.files
+﻿package com.appdex.files
 
 import com.appdex.arch.MviState
 import com.appdex.model.Bookmark

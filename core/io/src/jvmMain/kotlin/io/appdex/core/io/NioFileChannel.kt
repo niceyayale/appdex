@@ -1,4 +1,4 @@
-package io.appdex.core.io
+﻿package io.appdex.core.io
 
 import java.nio.ByteBuffer
 import java.nio.channels.FileChannel

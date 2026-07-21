@@ -1,4 +1,4 @@
-package com.appdex.player.image
+﻿package com.appdex.player.image
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -50,7 +50,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import androidx.compose.ui.platform.LocalContext
 import com.appdex.common.FormatUtil
-import com.appdex.ui.components.AppDexBar
+import com.appdex.ui.components.AppXBar
 import com.appdex.ui.components.InfoRow
 import com.appdex.ui.theme.*
 

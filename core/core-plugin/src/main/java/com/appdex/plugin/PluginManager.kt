@@ -1,9 +1,9 @@
-package com.appdex.plugin
+﻿package com.appdex.plugin
 
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Central registry for managing APPDEX plugins.
+ * Central registry for managing AppX plugins.
  * Plugins are registered at app startup via [register] and can be
  * enabled/disabled at runtime.
  *
@@ -15,7 +15,7 @@ object PluginManager {
     private val plugins = ConcurrentHashMap<String, PluginEntry>()
 
     /** Register a plugin instance */
-    fun register(plugin: AppDexPlugin) {
+    fun register(plugin: AppXPlugin) {
         plugins[plugin.id] = PluginEntry(plugin)
     }
 

@@ -1,4 +1,4 @@
-package com.appdex.diff
+﻿package com.appdex.diff
 
 import com.appdex.arch.MviIntent
 

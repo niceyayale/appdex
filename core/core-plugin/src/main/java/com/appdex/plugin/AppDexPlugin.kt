@@ -1,14 +1,14 @@
-package com.appdex.plugin
+﻿package com.appdex.plugin
 
 import androidx.compose.runtime.Composable
 
 /**
- * Core plugin interface for APPDEX plugin system.
+ * Core plugin interface for AppX plugin system.
  * Plugins are lightweight utility modules that can be registered at runtime.
  * They are NOT loaded via DEX — they are compile-time registered components
- * that extend APPDEX functionality without modifying the core app.
+ * that extend AppX functionality without modifying the core app.
  */
-interface AppDexPlugin {
+interface AppXPlugin {
 
     /** Unique identifier for this plugin */
     val id: String
@@ -58,7 +58,7 @@ data class PluginMetadata(
  * Wraps a plugin instance with its metadata and enabled state.
  */
 data class PluginEntry(
-    val plugin: AppDexPlugin,
+    val plugin: AppXPlugin,
     var enabled: Boolean = true
 ) {
     val metadata: PluginMetadata

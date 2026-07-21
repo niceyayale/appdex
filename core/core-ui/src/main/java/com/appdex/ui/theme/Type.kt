@@ -1,4 +1,4 @@
-package com.appdex.ui.theme
+﻿package com.appdex.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
@@ -8,7 +8,7 @@ import androidx.compose.ui.unit.sp
 
 // ─── Deep Space Typography ───
 
-val AppDexTypography = Typography(
+val AppXTypography = Typography(
     displayLarge = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Bold,
@@ -117,7 +117,7 @@ val AppDexTypography = Typography(
 )
 
 // Monospace for code/terminal
-val AppDexMonoTypography = Typography(
+val AppXMonoTypography = Typography(
     bodyLarge = TextStyle(
         fontFamily = FontFamily.Monospace,
         fontWeight = FontWeight.Normal,

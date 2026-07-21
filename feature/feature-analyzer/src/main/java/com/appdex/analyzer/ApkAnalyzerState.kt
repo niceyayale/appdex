@@ -1,4 +1,4 @@
-package com.appdex.analyzer
+﻿package com.appdex.analyzer
 
 import android.graphics.Bitmap
 import com.appdex.apk.ApkInfo

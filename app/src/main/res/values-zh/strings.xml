@@ -1,15 +1,6 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">APPDEX</string>
-
-    <!-- Navigation -->
-    <string name="nav_files">文件</string>
-    <string name="nav_editor">编辑器</string>
-    <string name="nav_analyzer">APK</string>
-    <string name="nav_terminal">终端</string>
-    <string name="nav_tools">工具</string>
-    <string name="nav_remote">远程</string>
-    <string name="nav_settings">设置</string>
+    <string name="app_name">AppX</string>
 
     <!-- File Manager -->
     <string name="file_empty">空文件夹</string>
@@ -39,5 +30,5 @@
 
     <!-- Permissions -->
     <string name="perm_storage_title">存储权限</string>
-    <string name="perm_storage_message">APPDEX 需要存储访问权限来管理文件。请在下一个界面中授予所有文件访问权限。</string>
+    <string name="perm_storage_message">AppX 需要存储访问权限来管理文件。请在下一个界面中授予所有文件访问权限。</string>
 </resources>

@@ -1,4 +1,4 @@
-package com.appdex.ui.theme
+﻿package com.appdex.ui.theme
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
@@ -6,12 +6,12 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
 /**
- * AppDex 自定义颜色方案 — 包含所有自定义颜色
+ * AppX 自定义颜色方案 — 包含所有自定义颜色
  *
  * 深色主题：Deep Space 配色
  * 亮色主题：Moonlight 配色
  */
-data class AppDexColors(
+data class AppXColors(
     // Background
     val background: Color,
     val backgroundOuter: Color,
@@ -77,7 +77,7 @@ data class AppDexColors(
 )
 
 // ─── Dark Theme Colors ───
-val DarkAppDexColors = AppDexColors(
+val DarkAppXColors = AppXColors(
     background = DeepSpaceBlue,
     backgroundOuter = DeepSpaceOuter,
 
@@ -133,7 +133,7 @@ val DarkAppDexColors = AppDexColors(
 )
 
 // ─── Light Theme Colors ───
-val LightAppDexColors = AppDexColors(
+val LightAppXColors = AppXColors(
     background = MoonlightWhite,
     backgroundOuter = Color(0xFFF0F3FA),
 
@@ -189,14 +189,14 @@ val LightAppDexColors = AppDexColors(
 )
 
 // ─── Composition Local ───
-val LocalAppDexColors = staticCompositionLocalOf { DarkAppDexColors }
+val LocalAppXColors = staticCompositionLocalOf { DarkAppXColors }
 
 /**
- * 便捷访问器 — 在 Composable 中使用 AppDexTheme.colors.xxx
+ * 便捷访问器 — 在 Composable 中使用 AppXTheme.colors.xxx
  */
-object AppDexTheme {
-    val colors: AppDexColors
+object AppXTheme {
+    val colors: AppXColors
         @Composable
         @ReadOnlyComposable
-        get() = LocalAppDexColors.current
+        get() = LocalAppXColors.current
 }

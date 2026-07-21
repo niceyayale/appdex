@@ -1,4 +1,4 @@
-package com.appdex.sqliteviewer
+﻿package com.appdex.sqliteviewer
 
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
@@ -36,7 +36,7 @@ class SqliteViewerRepository @Inject constructor(
      */
     fun openFromApk(apkPath: String, dbEntryName: String) {
         close()
-        val tempFile = File.createTempFile("appdex_db", ".db", context.cacheDir)
+        val tempFile = File.createTempFile("AppX_db", ".db", context.cacheDir)
         java.util.zip.ZipFile(apkPath).use { zip ->
             val entry = zip.getEntry(dbEntryName)
                 ?: throw IllegalArgumentException("Entry not found: $dbEntryName")

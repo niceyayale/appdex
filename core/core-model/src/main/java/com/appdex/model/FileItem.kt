@@ -1,4 +1,4 @@
-package com.appdex.model
+﻿package com.appdex.model
 
 import kotlinx.serialization.Serializable
 

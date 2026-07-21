@@ -1,4 +1,4 @@
-package com.appdex.signing
+﻿package com.appdex.signing
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -58,11 +58,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.appdex.common.FormatUtil
-import com.appdex.ui.components.AppDexBar
-import com.appdex.ui.components.AppDexButton
-import com.appdex.ui.components.AppDexDivider
-import com.appdex.ui.components.AppDexRow
-import com.appdex.ui.components.AppDexSection
+import com.appdex.ui.components.AppXBar
+import com.appdex.ui.components.AppXButton
+import com.appdex.ui.components.AppXDivider
+import com.appdex.ui.components.AppXRow
+import com.appdex.ui.components.AppXSection
 import com.appdex.ui.theme.*
 import java.io.File
 import java.text.SimpleDateFormat
@@ -118,13 +118,13 @@ fun SigningScreen(
     var showCreateKeystore by remember { mutableStateOf(false) }
     var newKeystorePath by remember { mutableStateOf("") }
     var newKeystorePassword by remember { mutableStateOf("") }
-    var newAlias by remember { mutableStateOf("appdex") }
+    var newAlias by remember { mutableStateOf("AppX") }
     var newKeyPassword by remember { mutableStateOf("") }
-    var newSubject by remember { mutableStateOf("CN=APPDEX, O=APPDEX, C=CN") }
+    var newSubject by remember { mutableStateOf("CN=AppX, O=AppX, C=CN") }
 
     Box(modifier = Modifier.fillMaxSize().background(DeepSpaceBlue)) {
         Column(modifier = Modifier.fillMaxSize()) {
-            AppDexBar(
+            AppXBar(
                 title = "APK 签名",
                 back = true,
                 onBack = onBack,
@@ -137,8 +137,8 @@ fun SigningScreen(
                         modifier = Modifier.fillMaxSize().padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        com.appdex.ui.components.AppDexSection(label = "选择 APK") {
-                            com.appdex.ui.components.AppDexButton(
+                        com.appdex.ui.components.AppXSection(label = "选择 APK") {
+                            com.appdex.ui.components.AppXButton(
                                 text = "选择 APK 文件",
                                 icon = Icons.Default.Folder,
                                 onClick = { apkFilePicker.launch(arrayOf("application/vnd.android.package-archive", "*/*")) }
@@ -256,7 +256,7 @@ private fun KeystoreSelectionContent(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // APK 淇℃伅
-        AppDexSection(label = "APK 信息") {
+        AppXSection(label = "APK 信息") {
             Column(modifier = Modifier.border(1.dp, BorderLight).background(SurfaceAlt).padding(12.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Icon(Icons.Default.Security, contentDescription = null, tint = AmberGold, modifier = Modifier.size(20.dp))
@@ -282,7 +282,7 @@ private fun KeystoreSelectionContent(
         }
 
         // Keystore 錝犺浇
-        AppDexSection(label = "Keystore 加载") {
+        AppXSection(label = "Keystore 加载") {
             Column(modifier = Modifier.border(1.dp, BorderLight).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = keystorePath,
@@ -305,7 +305,7 @@ private fun KeystoreSelectionContent(
                     textStyle = androidx.compose.ui.text.TextStyle(fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = TextPrimary),
                     colors = textFieldColors(),
                 )
-                AppDexButton(
+                AppXButton(
                     text = "加载 Keystore",
                     icon = Icons.Default.Folder,
                     onClick = onLoad
@@ -348,7 +348,7 @@ private fun CredentialsContent(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        AppDexSection(label = "选择别名") {
+        AppXSection(label = "选择别名") {
             Column(modifier = Modifier.border(1.dp, BorderLight)) {
                 state.keystoreEntries.forEachIndexed { index, entry ->
                     val isSelected = entry.alias == state.selectedAlias
@@ -393,14 +393,14 @@ private fun CredentialsContent(
                         }
                     }
                     if (index < state.keystoreEntries.size - 1) {
-                        AppDexDivider()
+                        AppXDivider()
                     }
                 }
             }
         }
 
         if (state.selectedAlias.isNotEmpty()) {
-            AppDexSection(label = "Key 密码 (留空则使用 Keystore 密码)") {
+            AppXSection(label = "Key 密码 (留空则使用 Keystore 密码)") {
                 OutlinedTextField(
                     value = keyPassword,
                     onValueChange = onKeyPasswordChange,
@@ -414,7 +414,7 @@ private fun CredentialsContent(
                 )
             }
 
-            AppDexButton(
+            AppXButton(
                 text = "下一步 签名选项",
                 icon = Icons.Default.Check,
                 onClick = { onSelectEntry(state.selectedAlias) }
@@ -434,7 +434,7 @@ private fun SignOptionsContent(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        AppDexSection(label = "签名方案") {
+        AppXSection(label = "签名方案") {
             Column(modifier = Modifier.border(1.dp, BorderLight)) {
                 SchemeToggleRow(
                     name = "V1 (JAR 签名)",
@@ -442,14 +442,14 @@ private fun SignOptionsContent(
                     checked = state.schemeConfig.v1Enabled,
                     onCheckedChange = { onToggleScheme(it, state.schemeConfig.v2Enabled, state.schemeConfig.v3Enabled) }
                 )
-                AppDexDivider()
+                AppXDivider()
                 SchemeToggleRow(
                     name = "V2 (APK 签名方案)",
                     description = "Android 7.0+，更快的安装",
                     checked = state.schemeConfig.v2Enabled,
                     onCheckedChange = { onToggleScheme(state.schemeConfig.v1Enabled, it, state.schemeConfig.v3Enabled) }
                 )
-                AppDexDivider()
+                AppXDivider()
                 SchemeToggleRow(
                     name = "V3 (APK 签名方案 v3)",
                     description = "Android 9.0+，支持密钥轮换",
@@ -460,7 +460,7 @@ private fun SignOptionsContent(
         }
 
         // 签名摘要
-        AppDexSection(label = "签名摘要") {
+        AppXSection(label = "签名摘要") {
             Column(modifier = Modifier.border(1.dp, BorderLight).padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 SummaryRow("APK", state.inputApkName)
                 SummaryRow("Keystore", File(state.keystorePath).name)
@@ -474,7 +474,7 @@ private fun SignOptionsContent(
             }
         }
 
-        AppDexButton(
+        AppXButton(
             text = "执行签名",
             icon = Icons.Default.Security,
             onClick = onSign
@@ -516,18 +516,18 @@ private fun SigningResultContent(
 
         // 验证结果
         result?.verificationResult?.let { ver ->
-            AppDexSection(label = "验证结果") {
+            AppXSection(label = "验证结果") {
                 Column(modifier = Modifier.border(1.dp, BorderLight)) {
                     VerificationRow("V1 签名", ver.v1Verified)
-                    AppDexDivider()
+                    AppXDivider()
                     VerificationRow("V2 签名", ver.v2Verified)
-                    AppDexDivider()
+                    AppXDivider()
                     VerificationRow("V3 签名", ver.v3Verified)
                 }
             }
 
             if (ver.errors.isNotEmpty()) {
-                AppDexSection(label = "错误信息") {
+                AppXSection(label = "错误信息") {
                     Column(modifier = Modifier.border(1.dp, RedSupergiantDark).padding(12.dp)) {
                         ver.errors.forEach { err ->
                             Text(text = err, fontSize = 10.sp, color = RedSupergiant, modifier = Modifier.padding(vertical = 2.dp))
@@ -538,7 +538,7 @@ private fun SigningResultContent(
         }
 
         // 输出文件信息
-        AppDexSection(label = "输出文件") {
+        AppXSection(label = "输出文件") {
             Column(modifier = Modifier.border(1.dp, BorderLight).padding(12.dp)) {
                 val outputFile = File(result?.outputFilePath ?: "")
                 Text(
@@ -562,7 +562,7 @@ private fun SigningResultContent(
             }
         }
 
-        AppDexButton(
+        AppXButton(
             text = "完成",
             icon = Icons.Default.Check,
             onClick = onBack
@@ -600,7 +600,7 @@ private fun CreateKeystoreDialog(
                     onValueChange = onPathChange,
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("保存路径", fontSize = 10.sp) },
-                    placeholder = { Text("/sdcard/appdex.jks", fontSize = 10.sp) },
+                    placeholder = { Text("/sdcard/AppX.jks", fontSize = 10.sp) },
                     singleLine = true,
                     textStyle = androidx.compose.ui.text.TextStyle(fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = TextPrimary),
                     colors = textFieldColors(),

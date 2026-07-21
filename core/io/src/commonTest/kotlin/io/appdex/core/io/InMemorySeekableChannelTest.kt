@@ -1,4 +1,4 @@
-package io.appdex.core.io
+﻿package io.appdex.core.io
 
 class InMemorySeekableChannelTest : SeekableChannelContractTest() {
     override fun channelWith(initialBytes: ByteArray): SeekableChannel =

@@ -1,4 +1,4 @@
-package com.appdex.terminal
+﻿package com.appdex.terminal
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -50,7 +50,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.appdex.ui.components.AppDexBar
+import com.appdex.ui.components.AppXBar
 import com.appdex.ui.theme.*
 import kotlinx.coroutines.launch
 
@@ -116,14 +116,14 @@ fun TerminalScreen(
     // Initial prompt
     LaunchedEffect(Unit) {
         if (lines.isEmpty()) {
-            lines.add(TerminalLine.System("APPDEX Terminal v1.0 — type 'exit' to close session"))
+            lines.add(TerminalLine.System("AppX Terminal v1.0 — type 'exit' to close session"))
             lines.add(TerminalLine.Prompt(workingDir))
         }
     }
 
     Scaffold(
         topBar = {
-            AppDexBar(
+            AppXBar(
                 title = "终端",
                 back = true,
                 onBack = onBack,
@@ -132,7 +132,7 @@ fun TerminalScreen(
                         onClick = {
                             val text = lines.joinToString("\n") { line ->
                                 when (line) {
-                                    is TerminalLine.Prompt -> "appdex@device:${line.workingDir}$ "
+                                    is TerminalLine.Prompt -> "AppX@device:${line.workingDir}$ "
                                     is TerminalLine.Command -> line.text
                                     is TerminalLine.Output -> line.text
                                     is TerminalLine.Error -> line.text
@@ -307,7 +307,7 @@ private fun TerminalLineView(line: TerminalLine) {
         is TerminalLine.Prompt -> {
             Row(modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp)) {
                 Text(
-                    text = "appdex@device:",
+                    text = "AppX@device:",
                     style = MaterialTheme.typography.bodySmall,
                     fontFamily = FontFamily.Monospace,
                     fontSize = 13.sp,

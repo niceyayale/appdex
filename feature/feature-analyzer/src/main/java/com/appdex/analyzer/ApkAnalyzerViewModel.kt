@@ -1,4 +1,4 @@
-package com.appdex.analyzer
+﻿package com.appdex.analyzer
 
 import android.content.Context
 import android.content.pm.PackageManager
@@ -38,7 +38,7 @@ class ApkAnalyzerViewModel @Inject constructor(
             is ApkAnalyzerIntent.Clear -> {
                 // Clean up temp file
                 currentState.apkFilePath?.let { path ->
-                    try { File(path).delete() } catch (e: Exception) { Log.w("AppDex", "Suppressed exception", e) }
+                    try { File(path).delete() } catch (e: Exception) { Log.w("AppX", "Suppressed exception", e) }
                 }
                 update { it.copy(apkInfo = null, appIcon = null, error = null, apkFilePath = null) }
                 savedStateHandle?.remove<String?>("apk_file_path")
@@ -81,7 +81,7 @@ class ApkAnalyzerViewModel @Inject constructor(
                 update { it.copy(apkInfo = enrichedInfo, appIcon = icon, isLoading = false, apkFilePath = tempFile.absolutePath) }
                 saveState("apk_file_path", tempFile.absolutePath)
             } catch (e: Exception) {
-                Log.w("AppDex", "Suppressed exception", e)
+                Log.w("AppX", "Suppressed exception", e)
                 update { it.copy(isLoading = false, error = e.message ?: "Failed to analyze APK") }
             }
         }
@@ -98,7 +98,7 @@ class ApkAnalyzerViewModel @Inject constructor(
                 drawableToBitmap(drawable)
             }
         } catch (e: Exception) {
-            Log.w("AppDex", "Suppressed exception", e)
+            Log.w("AppX", "Suppressed exception", e)
             null
         }
     }
@@ -134,7 +134,7 @@ class ApkAnalyzerViewModel @Inject constructor(
             )
             info.copy(manifest = manifest)
         } catch (e: Exception) {
-            Log.w("AppDex", "Suppressed exception", e)
+            Log.w("AppX", "Suppressed exception", e)
             info
         }
     }

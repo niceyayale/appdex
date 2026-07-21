@@ -1,4 +1,4 @@
-package com.appdex.analyzer
+﻿package com.appdex.analyzer
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -51,7 +51,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.appdex.apk.ApkEntry
 import com.appdex.common.FormatUtil
-import com.appdex.ui.components.AppDexBar
+import com.appdex.ui.components.AppXBar
 import com.appdex.ui.components.EmptyState
 import com.appdex.ui.components.ErrorState
 import com.appdex.ui.components.LoadingState
@@ -86,7 +86,7 @@ fun ApkAnalyzerScreen(
 
     Box(modifier = Modifier.fillMaxSize().background(DeepSpaceBlue)) {
         Column(modifier = Modifier.fillMaxSize()) {
-            AppDexBar(title = "APK 分析")
+            AppXBar(title = "APK 分析")
 
             if (state.isLoading) {
                 LoadingState()

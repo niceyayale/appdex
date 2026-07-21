@@ -1,4 +1,4 @@
-package io.appdex.core.axml.chunk
+﻿package io.appdex.core.axml.chunk
 
 /**
  * AXML chunk 通用头。

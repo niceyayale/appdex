@@ -1,3 +1,3 @@
-package com.appdex.arch
+﻿package com.appdex.arch
 
 interface MviState

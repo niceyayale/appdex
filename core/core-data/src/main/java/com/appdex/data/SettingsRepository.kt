@@ -1,4 +1,4 @@
-package com.appdex.data
+﻿package com.appdex.data
 
 import android.content.Context
 import androidx.datastore.core.DataStore
@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
-private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "appdex_settings")
+private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "AppX_settings")
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 enum class DensityMode { COMPACT, STANDARD, COMFORTABLE }
@@ -99,6 +99,13 @@ class SettingsRepository @Inject constructor(
 
     suspend fun setLanguageMode(mode: LanguageMode) {
         dataStore.edit { it[KEY_LANGUAGE] = mode.ordinal }
+        // Also write to SharedPreferences for synchronous access in attachBaseContext
+        val prefs = context.getSharedPreferences("language_prefs", Context.MODE_PRIVATE)
+        prefs.edit().putString("language_mode", when (mode) {
+            LanguageMode.ENGLISH -> "english"
+            LanguageMode.CHINESE -> "chinese"
+            LanguageMode.SYSTEM -> "system"
+        }).apply()
     }
 
     suspend fun setTerminalFontSize(size: Int) {

@@ -1,4 +1,4 @@
-package com.appdex.terminal
+﻿package com.appdex.terminal
 
 import android.util.Log
 
@@ -43,7 +43,7 @@ class TerminalSession(
                 // Set environment
                 processBuilder.environment().putAll(environment)
                 processBuilder.environment()["TERM"] = "xterm-256color"
-                processBuilder.environment()["PS1"] = "appdex@device:\$ "
+                processBuilder.environment()["PS1"] = "AppX@device:\$ "
 
                 val process = processBuilder.start()
                 currentProcess = process
@@ -66,7 +66,7 @@ class TerminalSession(
                 _output.emit(TerminalOutput.Error(e.message ?: "Unknown error"))
                 _output.emit(TerminalOutput.Prompt(workingDir))
             } catch (e: Exception) {
-                Log.w("AppDex", "Suppressed exception", e)
+                Log.w("AppX", "Suppressed exception", e)
                 _output.emit(TerminalOutput.Error(e.message ?: "Execution failed"))
                 _output.emit(TerminalOutput.Prompt(workingDir))
             } finally {

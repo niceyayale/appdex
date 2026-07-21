@@ -1,4 +1,4 @@
-package com.appdex.files
+﻿package com.appdex.files
 
 import android.util.Log
 
@@ -152,7 +152,7 @@ fun FileManagerScreen(
                     title = {
                         Column {
                             Text(
-                                text = "APPDEX",
+                                text = "AppX",
                                 style = MaterialTheme.typography.titleLarge
                             )
                             Text(
@@ -706,7 +706,7 @@ private fun openFile(context: android.content.Context, file: FileItem) {
         }
         context.startActivity(intent)
     } catch (e: Exception) {
-        Log.w("AppDex", "Suppressed exception", e)
+        Log.w("AppX", "Suppressed exception", e)
     }
 }
 

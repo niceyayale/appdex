@@ -1,4 +1,4 @@
-package com.appdex.ui.components
+﻿package com.appdex.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -22,21 +22,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.appdex.ui.theme.AppDexTheme
+import com.appdex.ui.theme.AppXTheme
 import com.appdex.ui.theme.*
 
-data class AppDexNavItem(
+data class AppXNavItem(
     val label: String,
     val icon: ImageVector
 )
 
 @Composable
-fun AppDexBottomNav(
-    items: List<AppDexNavItem>,
+fun AppXBottomNav(
+    items: List<AppXNavItem>,
     currentRoute: String,
     onNavigate: (Int) -> Unit
 ) {
-    val c = AppDexTheme.colors
+    val c = AppXTheme.colors
     Row(
         modifier = Modifier
             .fillMaxWidth()

@@ -22,6 +22,7 @@ dependencies {
     implementation(project(":core:core-arch"))
     implementation(project(":core:core-ui"))
     implementation(project(":core:core-common"))
+    implementation(project(":core:core-data"))
     implementation(project(":feature:feature-signing"))
 
     implementation(platform(libs.compose.bom))

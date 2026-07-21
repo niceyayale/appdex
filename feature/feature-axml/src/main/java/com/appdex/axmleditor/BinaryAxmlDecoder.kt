@@ -1,4 +1,4 @@
-package com.appdex.axmleditor
+﻿package com.appdex.axmleditor
 
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -27,7 +27,7 @@ class BinaryAxmlDecoder(private val data: ByteArray) {
         var depth = 0
         var offset = findChunkAfterStringPool(headerSize, strings)
 
-        while (offset < data.size) {
+        while (offset + 8 <= data.size) {
             val type = readUShort(offset)
             val chunkHeaderSize = readUShort(offset + 2)
             val chunkSize = readUInt(offset + 4).toInt()
@@ -35,37 +35,44 @@ class BinaryAxmlDecoder(private val data: ByteArray) {
             when (type) {
                 0x0102 -> { // XML_START_TAG
                     val nameIdx = readInt(offset + chunkHeaderSize + 4)
-                    val attrCount = readUShort(offset + chunkHeaderSize + 10)
                     val attrStart = readUShort(offset + chunkHeaderSize + 8).toInt()
+                    val attrSize = readUShort(offset + chunkHeaderSize + 10).toInt()
+                    val attrCount = readUShort(offset + chunkHeaderSize + 12)
 
                     val name = strings.getOrNull(nameIdx) ?: ""
                     sb.append("  ".repeat(depth)).append("<").append(name)
 
                     // Attributes
+                    val attrStride = if (attrSize > 0) attrSize else 20
                     var attrOff = offset + chunkHeaderSize + attrStart
                     for (i in 0 until attrCount) {
+                        // Bounds check: each attribute is at least 20 bytes
+                        if (attrOff + 20 > data.size) break
                         val nsIdx = readInt(attrOff)
                         val attrNameIdx = readInt(attrOff + 4)
                         val rawValueIdx = readInt(attrOff + 8)
                         val dataType = data[attrOff + 15].toInt() and 0xFF
                         val dataVal = readInt(attrOff + 16)
 
-                        val attrName = strings.getOrNull(attrNameIdx) ?: ""
+                        val attrName = strings.getOrNull(attrNameIdx) ?: continue
                         val value = if (rawValueIdx >= 0 && rawValueIdx < strings.size) {
                             strings[rawValueIdx]
                         } else {
                             resolveTypedValue(dataType, dataVal)
                         }
 
+                        sb.append(" ")
                         if (nsIdx >= 0 && nsIdx < strings.size) {
                             val ns = strings[nsIdx]
                             // Simplify namespace: show prefix only
                             val prefix = ns.substringAfterLast("/").substringAfterLast(":")
-                            sb.append(" ").append(prefix).append(":")
+                            if (prefix.isNotEmpty()) {
+                                sb.append(prefix).append(":")
+                            }
                         }
                         sb.append(attrName).append("=\"").append(value).append("\"")
 
-                        attrOff += 20
+                        attrOff += attrStride
                     }
                     sb.append(">\n")
                     depth++

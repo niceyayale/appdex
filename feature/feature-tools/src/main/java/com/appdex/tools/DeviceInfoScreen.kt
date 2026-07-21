@@ -1,4 +1,4 @@
-package com.appdex.tools
+﻿package com.appdex.tools
 
 import android.util.Log
 import android.os.Build
@@ -179,7 +179,7 @@ private fun getDeviceInfo(): List<InfoGroup> {
                 "Used" to formatBytes((totalBlocks - availableBlocks) * blockSize)
             )
         ))
-    } catch (e: Exception) { Log.w("AppDex", "Suppressed exception", e) }
+    } catch (e: Exception) { Log.w("AppX", "Suppressed exception", e) }
 
     // Display info
     groups.add(InfoGroup(

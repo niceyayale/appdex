@@ -1,4 +1,4 @@
-package com.appdex.apk
+﻿package com.appdex.apk
 
 import kotlinx.serialization.Serializable
 

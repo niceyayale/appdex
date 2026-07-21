@@ -1,4 +1,4 @@
-package com.appdex.tools.plugins
+﻿package com.appdex.tools.plugins
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -33,18 +33,18 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
-import com.appdex.plugin.AppDexPlugin
+import com.appdex.plugin.AppXPlugin
 import com.appdex.plugin.PluginCategory
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 
-class TimestampConverterPlugin : AppDexPlugin {
+class TimestampConverterPlugin : AppXPlugin {
     override val id = "timestamp_converter"
     override val name = "Timestamp Converter"
     override val description = "Convert between Unix timestamps and human-readable dates"
-    override val author = "APPDEX"
+    override val author = "AppX"
     override val version = "1.0.0"
     override val category = PluginCategory.CONVERT
 

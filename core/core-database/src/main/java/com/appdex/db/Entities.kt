@@ -1,4 +1,4 @@
-package com.appdex.db
+﻿package com.appdex.db
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

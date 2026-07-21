@@ -1,4 +1,4 @@
-package io.appdex.core.dex
+﻿package io.appdex.core.dex
 
 import com.android.tools.smali.dexlib2.Opcodes
 import com.android.tools.smali.dexlib2.dexbacked.DexBackedDexFile

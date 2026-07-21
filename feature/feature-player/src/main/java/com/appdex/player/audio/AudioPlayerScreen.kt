@@ -1,4 +1,4 @@
-package com.appdex.player.audio
+﻿package com.appdex.player.audio
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -46,8 +46,8 @@ import androidx.compose.ui.unit.sp
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
-import com.appdex.ui.components.AppDexBar
-import com.appdex.ui.components.AppDexCard
+import com.appdex.ui.components.AppXBar
+import com.appdex.ui.components.AppXCard
 import com.appdex.ui.theme.*
 
 @Composable
@@ -99,7 +99,7 @@ fun AudioPlayerScreen(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            AppDexBar(
+            AppXBar(
                 title = "音频播放",
                 back = true,
                 onBack = {
@@ -233,7 +233,7 @@ fun AudioPlayerScreen(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 // Playlist
-                AppDexCard(
+                AppXCard(
                     modifier = Modifier.fillMaxWidth(),
                     borderColor = BorderLight,
                     backgroundColor = SurfaceAlt

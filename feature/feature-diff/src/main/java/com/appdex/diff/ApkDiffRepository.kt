@@ -1,4 +1,4 @@
-package com.appdex.diff
+﻿package com.appdex.diff
 
 import com.appdex.apk.ApkFile
 import java.io.File

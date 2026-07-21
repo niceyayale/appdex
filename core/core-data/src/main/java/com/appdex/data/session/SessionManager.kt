@@ -1,4 +1,4 @@
-package com.appdex.data.session
+﻿package com.appdex.data.session
 
 import android.graphics.Bitmap
 import android.util.Log
@@ -113,7 +113,12 @@ data class AiMessage(
     val role: AiRole,
     val content: String,
     val timestamp: Long = System.currentTimeMillis(),
-    val actionCards: List<ActionCard> = emptyList()
+    val actionCards: List<ActionCard> = emptyList(),
+    // Structured AI response fields (populated when AI follows structured format)
+    val reason: String? = null,
+    val risk: String? = null,
+    val recommendation: String? = null,
+    val technicalDetails: String? = null
 )
 
 enum class AiRole { USER, ASSISTANT, SYSTEM }
@@ -153,6 +158,24 @@ data class HistoryEntry(
     val snapshotPath: String? = null  // 文件快照路径（用于 Undo）
 )
 
+/**
+ * 会话摘要 — 从 ApkInfo 提取的持久化摘要，用于 APP 重启后恢复工作区
+ */
+data class SessionSummary(
+    val dexCount: Int = 0,
+    val resourceCount: Int = 0,
+    val nativeLibCount: Int = 0,
+    val hasSignature: Boolean = false,
+    val signatureVersion: Int = 0,
+    val permissionCount: Int = 0,
+    val dangerousPermissionCount: Int = 0,
+    val activityCount: Int = 0,
+    val serviceCount: Int = 0,
+    val receiverCount: Int = 0,
+    val providerCount: Int = 0,
+    val findingCount: Int = 0
+)
+
 // ═══════════════════════════════════════════════════════════════
 // Analysis Session
 // ═══════════════════════════════════════════════════════════════
@@ -175,7 +198,11 @@ data class AnalysisSession(
     val aiMessages: List<AiMessage> = emptyList(),
     val history: List<HistoryEntry> = emptyList(),
     val createdAt: Long = System.currentTimeMillis(),
-    val updatedAt: Long = System.currentTimeMillis()
+    val updatedAt: Long = System.currentTimeMillis(),
+    // ── RC3: 持久化摘要 & 导航上下文 ──
+    val summary: SessionSummary = SessionSummary(),
+    val lastTool: String = "",
+    val lastRoute: String = ""
 ) {
     val displayName: String
         get() = packageName.ifEmpty { apkFilePath?.substringAfterLast('/') ?: "未知应用" }
@@ -222,6 +249,80 @@ class SessionManager @Inject constructor(
 
     private val _displayMode = MutableStateFlow(ToolDisplayMode.NORMAL)
     val displayMode: StateFlow<ToolDisplayMode> = _displayMode.asStateFlow()
+
+    // ═══════════════════════════════════════════════════════════════
+    // RC4: Workspace Context — Live tracking of user activity
+    // AI uses this to know what the user just did.
+    // ═══════════════════════════════════════════════════════════════
+
+    data class LiveWorkspaceContext(
+        val activePanel: String = "",
+        val activeFilePath: String? = null,
+        val activeSelection: String? = null,
+        val recentActions: List<String> = emptyList(),
+        val timeline: List<WorkspaceTimelineEvent> = emptyList()
+    )
+
+    data class WorkspaceTimelineEvent(
+        val timestamp: Long = System.currentTimeMillis(),
+        val type: String,
+        val title: String,
+        val detail: String? = null
+    )
+
+    private val _workspaceContexts = MutableStateFlow<Map<String, LiveWorkspaceContext>>(emptyMap())
+    val workspaceContexts: StateFlow<Map<String, LiveWorkspaceContext>> = _workspaceContexts.asStateFlow()
+
+    /**
+     * Report user activity — called by tool screens when user navigates, selects, or acts.
+     * This feeds into AI context so the Copilot knows what the user just did.
+     */
+    fun reportWorkspaceAction(
+        sessionId: String? = _currentSessionId.value,
+        panel: String? = null,
+        filePath: String? = null,
+        selection: String? = null,
+        action: String? = null,
+        timelineType: String? = null,
+        timelineTitle: String? = null,
+        timelineDetail: String? = null
+    ) {
+        if (sessionId == null) return
+        _workspaceContexts.update { contexts ->
+            val current = contexts[sessionId] ?: LiveWorkspaceContext()
+            val updated = current.copy(
+                activePanel = panel ?: current.activePanel,
+                activeFilePath = filePath ?: current.activeFilePath,
+                activeSelection = selection ?: current.activeSelection,
+                recentActions = (if (action != null) listOf(action) + current.recentActions else current.recentActions).take(10),
+                timeline = if (timelineType != null && timelineTitle != null) {
+                    (current.timeline + WorkspaceTimelineEvent(
+                        type = timelineType,
+                        title = timelineTitle,
+                        detail = timelineDetail
+                    )).takeLast(20)
+                } else current.timeline
+            )
+            contexts + (sessionId to updated)
+        }
+    }
+
+    /**
+     * Get the live workspace context for a session (for AI context building).
+     */
+    fun getWorkspaceContext(sessionId: String? = _currentSessionId.value): LiveWorkspaceContext {
+        return _workspaceContexts.value[sessionId] ?: LiveWorkspaceContext()
+    }
+
+    /**
+     * Update last tool and route when user navigates.
+     */
+    fun updateNavigationContext(tool: String, route: String) {
+        _currentSessionId.value?.let { id ->
+            updateSessionInternal(id) { it.copy(lastTool = tool, lastRoute = route) }
+            reportWorkspaceAction(sessionId = id, panel = tool, action = "导航到 $tool")
+        }
+    }
 
     // ── Persistence ──
 
@@ -389,6 +490,17 @@ class SessionManager @Inject constructor(
         updateSessionInternal(sessionId) {
             it.copy(aiMessages = it.aiMessages + message, updatedAt = System.currentTimeMillis())
         }
+        // RC4: Record workspace timeline — AI chat
+        if (message.role == AiRole.USER) {
+            reportWorkspaceAction(
+                sessionId = sessionId,
+                panel = "AI",
+                action = "向 AI 提问: ${message.content.take(50)}",
+                timelineType = "AI_CHAT",
+                timelineTitle = "AI 对话",
+                timelineDetail = message.content.take(80)
+            )
+        }
     }
 
     // ── Findings ──
@@ -406,9 +518,18 @@ class SessionManager @Inject constructor(
                 securityScore = score,
                 status = SessionStatus.READY,
                 workflowSteps = it.workflowSteps.map { ws -> ws.copy(status = StepStatus.DONE, progress = 1f) },
+                summary = it.summary.copy(findingCount = findings.size),
                 updatedAt = System.currentTimeMillis()
             )
         }
+        // RC4: Record workspace timeline — Analysis complete
+        reportWorkspaceAction(
+            sessionId = sessionId,
+            action = "分析完成: 评分 $score/100",
+            timelineType = "ANALYSIS",
+            timelineTitle = "分析完成",
+            timelineDetail = "安全评分: $score/100, 发现: ${findings.size} 项"
+        )
     }
 
     // ── Status ──
@@ -423,6 +544,21 @@ class SessionManager @Inject constructor(
         apkInfo: ApkInfo,
         appIcon: Bitmap?
     ) {
+        // 构建 SessionSummary — 持久化后重启可恢复完整工作区
+        val summary = SessionSummary(
+            dexCount = apkInfo.entries.count { it.name.endsWith(".dex") },
+            resourceCount = apkInfo.entries.count { it.name.endsWith(".xml") || it.name.endsWith(".png") || it.name.endsWith(".arsc") },
+            nativeLibCount = apkInfo.entries.count { it.name.endsWith(".so") },
+            hasSignature = apkInfo.signatures.isNotEmpty(),
+            signatureVersion = apkInfo.signatures.maxOfOrNull { it.version } ?: 0,
+            permissionCount = apkInfo.manifest.permissions.size,
+            dangerousPermissionCount = apkInfo.manifest.permissions.count { it in DANGEROUS_PERMISSIONS_SESSION },
+            activityCount = apkInfo.manifest.activities.size,
+            serviceCount = apkInfo.manifest.services.size,
+            receiverCount = apkInfo.manifest.receivers.size,
+            providerCount = apkInfo.manifest.providers.size,
+            findingCount = 0
+        )
         updateSessionInternal(sessionId) {
             it.copy(
                 apkFilePath = apkFilePath,
@@ -432,10 +568,38 @@ class SessionManager @Inject constructor(
                 versionName = apkInfo.manifest.versionName,
                 fileSize = apkInfo.fileSize,
                 status = SessionStatus.ANALYZING,
+                summary = summary,
                 updatedAt = System.currentTimeMillis()
             )
         }
+        // RC4: Record workspace timeline — APK opened
+        reportWorkspaceAction(
+            sessionId = sessionId,
+            panel = "Workspace",
+            action = "导入 APK: ${apkInfo.manifest.packageName}",
+            timelineType = "IMPORT",
+            timelineTitle = "导入 APK",
+            timelineDetail = apkInfo.manifest.packageName
+        )
     }
+
+    // 危险权限列表（用于会话摘要构建）
+    private val DANGEROUS_PERMISSIONS_SESSION = setOf(
+        "android.permission.READ_SMS", "android.permission.SEND_SMS",
+        "android.permission.RECEIVE_SMS", "android.permission.RECEIVE_MMS",
+        "android.permission.READ_CONTACTS", "android.permission.WRITE_CONTACTS",
+        "android.permission.READ_CALL_LOG", "android.permission.WRITE_CALL_LOG",
+        "android.permission.CAMERA", "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_FINE_LOCATION", "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.READ_EXTERNAL_STORAGE", "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.MANAGE_EXTERNAL_STORAGE",
+        "android.permission.SYSTEM_ALERT_WINDOW", "android.permission.REQUEST_INSTALL_PACKAGES",
+        "android.permission.READ_PHONE_STATE", "android.permission.CALL_PHONE",
+        "android.permission.BIND_ACCESSIBILITY_SERVICE",
+        "android.permission.WRITE_SETTINGS", "android.permission.REBOOT",
+        "android.permission.INSTALL_PACKAGES", "android.permission.DELETE_PACKAGES"
+    )
 
     // ── History & Undo ──
 

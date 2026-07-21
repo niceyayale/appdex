@@ -1,4 +1,4 @@
-package io.appdex.core.apk.signing
+﻿package io.appdex.core.apk.signing
 
 import io.appdex.core.io.InMemorySeekableChannel
 import org.junit.jupiter.api.Assertions.*

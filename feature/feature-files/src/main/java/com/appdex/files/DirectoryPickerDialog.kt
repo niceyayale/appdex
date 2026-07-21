@@ -1,4 +1,4 @@
-package com.appdex.files
+﻿package com.appdex.files
 
 import android.os.Environment
 import androidx.compose.foundation.clickable

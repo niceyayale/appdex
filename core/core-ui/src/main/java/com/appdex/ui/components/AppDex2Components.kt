@@ -1,10 +1,14 @@
 package com.appdex.ui.components
 
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -25,6 +29,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Check
@@ -36,8 +41,13 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Psychology
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Storage
@@ -49,11 +59,16 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontFamily
@@ -61,22 +76,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.appdex.ui.theme.AppDexTheme
+import com.appdex.ui.theme.AppXTheme
 import com.appdex.ui.theme.*
 
 // ═══════════════════════════════════════════════════════════════
-// AppDex 2.0 Design System Components
+// AppX 2.0 Design System Components
 // ═══════════════════════════════════════════════════════════════
 
-// ─── AppDexHero — 首页 Hero 区域 ───
+// ─── AppXHero — 首页 Hero 区域 ───
 @Composable
-fun AppDexHero(
-    title: String = "AppDex",
+fun AppXHero(
+    title: String = "AppX",
     subtitle: String = "AI 驱动的 APK 分析平台",
     version: String = "2.0",
     onAnalyze: () -> Unit
 ) {
-    val c = AppDexTheme.colors
+    val c = AppXTheme.colors
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -137,7 +152,7 @@ fun AppDexHero(
                 .fillMaxWidth()
                 .height(52.dp)
                 .background(c.amberGold)
-                .clickable(onClick = onAnalyze),
+                .bounceClick(onClick = onAnalyze),
             contentAlignment = Alignment.Center
         ) {
             Row(
@@ -162,9 +177,9 @@ fun AppDexHero(
     }
 }
 
-// ─── AppDexTaskCard — 任务卡片 ───
+// ─── AppXTaskCard — 任务卡片 ───
 @Composable
-fun AppDexTaskCard(
+fun AppXTaskCard(
     appName: String,
     packageName: String,
     version: String,
@@ -179,7 +194,7 @@ fun AppDexTaskCard(
             .fillMaxWidth()
             .border(1.dp, BorderLight)
             .background(SurfaceAlt)
-            .clickable(onClick = onClick)
+            .bounceClick(onClick = onClick)
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -237,9 +252,9 @@ fun AppDexTaskCard(
     }
 }
 
-// ─── AppDexFindingCard — 分析发现卡片 ───
+// ─── AppXFindingCard — 分析发现卡片 ───
 @Composable
-fun AppDexFindingCard(
+fun AppXFindingCard(
     severity: String,
     category: String,
     title: String,
@@ -247,7 +262,7 @@ fun AppDexFindingCard(
     recommendation: String? = null,
     onAction: (() -> Unit)? = null
 ) {
-    val c = AppDexTheme.colors
+    val c = AppXTheme.colors
     val (severityColor, severityBg) = when (severity) {
         "CRITICAL", "严重" -> c.redSupergiant to c.redSupergiantContainer
         "HIGH", "高危" -> Color(0xFFFF9800) to Color(0xFF3D2410)
@@ -328,7 +343,7 @@ fun AppDexFindingCard(
             Row(
                 modifier = Modifier
                     .border(1.dp, c.borderMedium)
-                    .clickable(onClick = onAction)
+                    .bounceClick(onClick = onAction)
                     .padding(horizontal = 10.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -350,15 +365,15 @@ fun AppDexFindingCard(
     }
 }
 
-// ─── AppDexActionCard — AI 推荐动作卡片 ───
+// ─── AppXActionCard — AI 推荐动作卡片 ───
 @Composable
-fun AppDexActionCard(
+fun AppXActionCard(
     title: String,
     description: String,
     iconType: String,
     onClick: () -> Unit
 ) {
-    val c = AppDexTheme.colors
+    val c = AppXTheme.colors
     val icon = actionIconForType(iconType)
     val iconColor = actionIconColorForType(iconType)
 
@@ -367,7 +382,7 @@ fun AppDexActionCard(
             .fillMaxWidth()
             .border(1.dp, c.borderMedium)
             .background(c.surfaceDeep)
-            .clickable(onClick = onClick)
+            .bounceClick(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -409,7 +424,7 @@ fun AppDexActionCard(
     }
 }
 
-// ─── AppDexAiCard — AI 对话气泡 ───
+// ─── AppXAiCard — AI 对话气泡 ───
 data class AiActionCardData(
     val title: String,
     val description: String,
@@ -418,18 +433,32 @@ data class AiActionCardData(
 )
 
 @Composable
-fun AppDexAiCard(
+fun AppXAiCard(
     content: String,
     isUser: Boolean,
     actionCards: List<AiActionCardData> = emptyList(),
-    onActionClick: ((AiActionCardData) -> Unit)? = null
+    reason: String? = null,
+    risk: String? = null,
+    recommendation: String? = null,
+    technicalDetails: String? = null,
+    isStreaming: Boolean = false,
+    onActionClick: ((AiActionCardData) -> Unit)? = null,
+    onCopy: ((String) -> Unit)? = null,
+    onRegenerate: (() -> Unit)? = null,
+    onShare: ((String) -> Unit)? = null
 ) {
-    val c = AppDexTheme.colors
+    val c = AppXTheme.colors
     val bgGradient = if (isUser) {
         Brush.linearGradient(listOf(c.amberGoldContainer, c.amberGoldContainer))
     } else {
         Brush.linearGradient(listOf(c.aiGradientStart, c.aiGradientEnd))
     }
+
+    // Determine if this is a structured response (has extra sections beyond summary)
+    val hasStructuredSections = !isUser && !isStreaming && (
+        !reason.isNullOrBlank() || !risk.isNullOrBlank() ||
+        !recommendation.isNullOrBlank() || !technicalDetails.isNullOrBlank()
+    )
 
     Column(
         modifier = Modifier
@@ -439,7 +468,7 @@ fun AppDexAiCard(
     ) {
         Box(
             modifier = Modifier
-                .widthIn(max = 280.dp)
+                .widthIn(max = 320.dp)
                 .background(bgGradient)
                 .border(
                     1.dp,
@@ -460,19 +489,73 @@ fun AppDexAiCard(
                             tint = c.iconBlueBright
                         )
                         Text(
-                            text = "AppDex AI",
+                            text = "AppX AI",
                             fontSize = 9.sp,
                             color = c.iconBlueBright,
                             fontFamily = FontFamily.Monospace
                         )
                     }
                     Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = content,
-                        fontSize = 12.sp,
-                        color = c.textPrimary,
-                        lineHeight = 18.sp
-                    )
+                    // Summary (main content) — with Markdown rendering
+                    if (content.contains("```") || content.contains("##") || content.contains("**") || content.contains("- ") || content.contains("> ")) {
+                        MarkdownText(text = content)
+                    } else {
+                        Text(
+                            text = content,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = c.textPrimary,
+                            lineHeight = 18.sp
+                        )
+                    }
+                    // Streaming cursor indicator
+                    if (isStreaming) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Box(
+                            modifier = Modifier
+                                .size(width = 8.dp, height = 14.dp)
+                                .background(c.amberGold)
+                        )
+                    }
+                    // Structured sections
+                    if (hasStructuredSections) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        reason?.takeIf { it.isNotBlank() }?.let {
+                            StructuredSection(
+                                icon = Icons.Default.Info,
+                                iconColor = c.iconBlue,
+                                label = "原因",
+                                text = it
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                        }
+                        risk?.takeIf { it.isNotBlank() }?.let {
+                            StructuredSection(
+                                icon = Icons.Default.Warning,
+                                iconColor = c.redSupergiant,
+                                label = "风险",
+                                text = it
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                        }
+                        recommendation?.takeIf { it.isNotBlank() }?.let {
+                            StructuredSection(
+                                icon = Icons.Default.Lightbulb,
+                                iconColor = c.amberGold,
+                                label = "建议",
+                                text = it
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                        }
+                        technicalDetails?.takeIf { it.isNotBlank() }?.let {
+                            StructuredSection(
+                                icon = Icons.Default.Code,
+                                iconColor = c.auroraGreen,
+                                label = "技术详情",
+                                text = it
+                            )
+                        }
+                    }
                 }
             } else {
                 Text(
@@ -487,7 +570,7 @@ fun AppDexAiCard(
         if (!isUser && actionCards.isNotEmpty()) {
             Spacer(modifier = Modifier.height(8.dp))
             actionCards.forEach { card ->
-                AppDexActionCard(
+                AppXActionCard(
                     title = card.title,
                     description = card.description,
                     iconType = card.iconType,
@@ -496,17 +579,90 @@ fun AppDexAiCard(
                 Spacer(modifier = Modifier.height(4.dp))
             }
         }
+        // P1-2: Message action bar (copy / regenerate / share)
+        if (!isUser && !isStreaming && content.isNotBlank()) {
+            Spacer(modifier = Modifier.height(6.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                AiActionButton(
+                    icon = Icons.Default.ContentCopy,
+                    label = "复制",
+                    onClick = { onCopy?.invoke(content) }
+                )
+                if (onRegenerate != null) {
+                    AiActionButton(
+                        icon = Icons.Default.Refresh,
+                        label = "重新生成",
+                        onClick = onRegenerate
+                    )
+                }
+                if (onShare != null) {
+                    AiActionButton(
+                        icon = Icons.Default.Share,
+                        label = "分享",
+                        onClick = { onShare?.invoke(content) }
+                    )
+                }
+            }
+        }
     }
 }
 
-// ─── AppDexScoreCard — 安全评分卡片 ───
+/**
+ * A labeled section within an AI response card.
+ */
 @Composable
-fun AppDexScoreCard(
+private fun StructuredSection(
+    icon: ImageVector,
+    iconColor: Color,
+    label: String,
+    text: String
+) {
+    val c = AppXTheme.colors
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(c.surfaceAlt.copy(alpha = 0.4f))
+            .padding(horizontal = 8.dp, vertical = 6.dp)
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                modifier = Modifier.size(10.dp),
+                tint = iconColor
+            )
+            Text(
+                text = label,
+                fontSize = 9.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = iconColor,
+                fontFamily = FontFamily.Monospace
+            )
+        }
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(
+            text = text,
+            fontSize = 10.sp,
+            color = c.textSecondary,
+            lineHeight = 15.sp
+        )
+    }
+}
+
+// ─── AppXScoreCard — 安全评分卡片 ───
+@Composable
+fun AppXScoreCard(
     score: Int,
     riskLevel: String,
     modifier: Modifier = Modifier
 ) {
-    val c = AppDexTheme.colors
+    val c = AppXTheme.colors
     val scoreColor = when {
         score >= 80 -> c.auroraGreen
         score >= 60 -> c.amberGold
@@ -564,13 +720,13 @@ fun AppDexScoreCard(
     }
 }
 
-// ─── AppDexTimeline — 分析进度时间线 ───
+// ─── AppXTimeline — 分析进度时间线 ───
 @Composable
-fun AppDexTimeline(
+fun AppXTimeline(
     steps: List<TimelineStep>,
     modifier: Modifier = Modifier
 ) {
-    val c = AppDexTheme.colors
+    val c = AppXTheme.colors
     Column(modifier = modifier.fillMaxWidth().padding(vertical = 8.dp)) {
         steps.forEachIndexed { index, step ->
             Row(
@@ -647,41 +803,87 @@ data class TimelineStep(
     val isCurrent: Boolean = false
 )
 
-// ─── AppDexLoadingFlow — 分析加载动画 ───
+// ─── AppXLoadingFlow — 分析加载动画（原则14：加载节奏） ───
+// 交错入场：图标 → 文字 → 进度条，每个延迟 150ms
+// 持续脉冲：平滑的 FastOutSlowInEasing，1200ms 呼吸节奏
 @Composable
-fun AppDexLoadingFlow(
+fun AppXLoadingFlow(
     message: String = "正在分析...",
     progress: Float? = null
 ) {
-    val c = AppDexTheme.colors
+    val c = AppXTheme.colors
+
+    // ── Staggered entrance animation ──
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { visible = true }
+
+    val iconAlpha by animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        animationSpec = tween(400, easing = FastOutSlowInEasing),
+        label = "iconEnter"
+    )
+    val iconScale by animateFloatAsState(
+        targetValue = if (visible) 1f else 0.6f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "iconScale"
+    )
+    val textAlpha by animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        animationSpec = tween(400, delayMillis = 150, easing = FastOutSlowInEasing),
+        label = "textEnter"
+    )
+    val progressAlpha by animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        animationSpec = tween(400, delayMillis = 300, easing = FastOutSlowInEasing),
+        label = "progressEnter"
+    )
+
+    // ── Continuous breathing pulse ──
+    val infiniteTransition = rememberInfiniteTransition(label = "ai_loading")
+    val pulseAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.5f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulseAlpha"
+    )
+    val pulseScale by infiniteTransition.animateFloat(
+        initialValue = 0.95f,
+        targetValue = 1.05f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulseScale"
+    )
+
     Column(
         modifier = Modifier.fillMaxWidth().padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Animated AI icon
-        val infiniteTransition = rememberInfiniteTransition(label = "ai_loading")
-        val alpha by infiniteTransition.animateFloat(
-            initialValue = 0.3f,
-            targetValue = 1f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(800, easing = LinearEasing),
-                repeatMode = RepeatMode.Reverse
-            ),
-            label = "alpha"
-        )
-
+        // AI icon — scale-in entrance + continuous breathing pulse
         Box(
             modifier = Modifier
                 .size(64.dp)
-                .background(c.aiGradientStart.copy(alpha = alpha)),
+                .graphicsLayer {
+                    scaleX = iconScale * pulseScale
+                    scaleY = iconScale * pulseScale
+                    alpha = iconAlpha * pulseAlpha
+                }
+                .background(c.aiGradientStart.copy(alpha = pulseAlpha * 0.8f)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 Icons.Default.Psychology,
                 contentDescription = null,
                 modifier = Modifier.size(32.dp),
-                tint = c.iconBlueBright.copy(alpha = alpha)
+                tint = c.iconBlueBright
             )
         }
 
@@ -689,19 +891,24 @@ fun AppDexLoadingFlow(
             text = message,
             fontSize = 13.sp,
             color = c.textSecondary,
-            fontWeight = FontWeight.SemiBold
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.graphicsLayer { alpha = textAlpha }
         )
 
         if (progress != null) {
             LinearProgressIndicator(
                 progress = { progress },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .graphicsLayer { alpha = progressAlpha },
                 color = c.amberGold,
                 trackColor = c.surfaceVariant
             )
         } else {
             CircularProgressIndicator(
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier
+                    .size(24.dp)
+                    .graphicsLayer { alpha = progressAlpha },
                 strokeWidth = 2.dp,
                 color = c.amberGold
             )
@@ -709,9 +916,9 @@ fun AppDexLoadingFlow(
     }
 }
 
-// ─── AppDexSessionCard — 会话卡片 ───
+// ─── AppXSessionCard — 会话卡片 ───
 @Composable
-fun AppDexSessionCard(
+fun AppXSessionCard(
     title: String,
     subtitle: String,
     score: Int,
@@ -720,13 +927,13 @@ fun AppDexSessionCard(
     onClick: () -> Unit,
     onDelete: (() -> Unit)? = null
 ) {
-    val c = AppDexTheme.colors
+    val c = AppXTheme.colors
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .border(1.dp, c.borderLight)
             .background(c.surfaceAlt)
-            .clickable(onClick = onClick)
+            .bounceClick(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -830,4 +1037,34 @@ fun actionIconColorForType(type: String): Color = when (type.lowercase()) {
     else -> IconBlue
 }
 
+// ─── AiActionButton — Small action button for AI message toolbar ───
+@Composable
+fun AiActionButton(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit
+) {
+    val c = AppXTheme.colors
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(c.surfaceAlt.copy(alpha = 0.5f))
+            .bounceClick(onClick = onClick)
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Icon(
+            icon,
+            contentDescription = label,
+            modifier = Modifier.size(12.dp),
+            tint = c.textTertiary
+        )
+        Text(
+            text = label,
+            fontSize = 9.sp,
+            color = c.textTertiary
+        )
+    }
+}
 

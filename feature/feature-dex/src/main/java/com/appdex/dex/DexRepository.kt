@@ -1,4 +1,4 @@
-package com.appdex.dex
+﻿package com.appdex.dex
 
 import com.android.tools.smali.baksmali.Adaptors.ClassDefinition
 import com.android.tools.smali.baksmali.BaksmaliOptions

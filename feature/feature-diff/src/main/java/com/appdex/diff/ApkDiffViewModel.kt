@@ -1,4 +1,4 @@
-package com.appdex.diff
+﻿package com.appdex.diff
 
 import android.util.Log
 
@@ -36,7 +36,7 @@ class ApkDiffViewModel @Inject constructor(
                 update { it.copy(isDiffing = false, diffResult = result) }
                 emitEffect(ApkDiffEffect.DiffComplete(result))
             } catch (e: Exception) {
-                Log.w("AppDex", "Suppressed exception", e)
+                Log.w("AppX", "Suppressed exception", e)
                 val msg = e.message ?: "对比失败"
                 update { it.copy(isDiffing = false, error = msg) }
                 emitEffect(ApkDiffEffect.ShowError(msg))

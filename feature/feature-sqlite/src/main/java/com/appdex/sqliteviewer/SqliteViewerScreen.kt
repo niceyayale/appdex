@@ -1,4 +1,4 @@
-package com.appdex.sqliteviewer
+﻿package com.appdex.sqliteviewer
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -25,8 +25,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.appdex.ui.components.AppDexBar
-import com.appdex.ui.components.AppDexButton
+import com.appdex.ui.components.AppXBar
+import com.appdex.ui.components.AppXButton
 import com.appdex.ui.theme.*
 
 @Composable
@@ -50,7 +50,7 @@ fun SqliteViewerScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
-                AppDexBar(
+                AppXBar(
                     title = if (state.fileName.isNotEmpty()) state.fileName else "SQLite 查看",
                     back = true,
                     onBack = onBack,

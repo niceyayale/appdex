@@ -1,4 +1,4 @@
-package com.appdex.files
+﻿package com.appdex.files
 
 import android.util.Log
 
@@ -109,7 +109,7 @@ class FileManagerViewModel @Inject constructor(
             } catch (e: SecurityException) {
                 update { it.copy(isLoading = false, error = "Permission denied: ${e.message}") }
             } catch (e: Exception) {
-                Log.w("AppDex", "Suppressed exception", e)
+                Log.w("AppX", "Suppressed exception", e)
                 update { it.copy(isLoading = false, error = e.message ?: "Unknown error") }
             }
         }
@@ -287,7 +287,7 @@ class FileManagerViewModel @Inject constructor(
                 emitEffect(FileManagerEffect.CompressComplete)
                 refresh()
             } catch (e: Exception) {
-                Log.w("AppDex", "Suppressed exception", e)
+                Log.w("AppX", "Suppressed exception", e)
                 update { it.copy(operationProgress = null) }
                 emitEffect(FileManagerEffect.Error("Compress failed: ${e.message}"))
             }
@@ -368,7 +368,7 @@ class FileManagerViewModel @Inject constructor(
                 update { it.copy(operationProgress = null) }
                 emitEffect(FileManagerEffect.ExtractComplete)
             } catch (e: Exception) {
-                Log.w("AppDex", "Suppressed exception", e)
+                Log.w("AppX", "Suppressed exception", e)
                 update { it.copy(operationProgress = null) }
                 emitEffect(FileManagerEffect.Error("Extract failed: ${e.message}"))
             }

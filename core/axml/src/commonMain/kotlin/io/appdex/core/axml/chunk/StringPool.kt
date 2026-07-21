@@ -1,4 +1,4 @@
-package io.appdex.core.axml.chunk
+﻿package io.appdex.core.axml.chunk
 
 import io.appdex.core.io.ByteReader
 

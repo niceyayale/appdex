@@ -1,4 +1,4 @@
-package com.appdex.analyzer
+﻿package com.appdex.analyzer
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -45,10 +45,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.appdex.apk.ApkInfo
 import com.appdex.apk.ApkManifest
 import com.appdex.common.FormatUtil
-import com.appdex.ui.components.AppDexBar
-import com.appdex.ui.components.AppDexDivider
-import com.appdex.ui.components.AppDexRow
-import com.appdex.ui.components.AppDexSection
+import com.appdex.ui.components.AppXBar
+import com.appdex.ui.components.AppXDivider
+import com.appdex.ui.components.AppXRow
+import com.appdex.ui.components.AppXSection
 import com.appdex.ui.components.EmptyState
 import com.appdex.ui.theme.*
 
@@ -70,7 +70,7 @@ fun ApkDetailScreen(
             modifier = Modifier.fillMaxSize(),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 32.dp)
         ) {
-            item { AppDexBar(title = "APK 详情", back = true, onBack = onBack) }
+            item { AppXBar(title = "APK 详情", back = true, onBack = onBack) }
 
             state.apkInfo?.let { info ->
                 // APK info header
@@ -234,37 +234,37 @@ fun ApkDetailScreen(
                         // Key entries
                         item {
                             Column(modifier = Modifier.padding(16.dp)) {
-                                AppDexSection(label = "快捷入口") {
+                                AppXSection(label = "快捷入口") {
                                     Column(modifier = Modifier.border(1.dp, BorderLight)) {
-                                        AppDexRow(
+                                        AppXRow(
                                             icon = Icons.Default.Security,
                                             title = "权限信息",
                                             detail = "${info.manifest.permissions.size} 个权限 · ${info.manifest.activities.size} 个 Activity",
                                             onClick = { selectedTab = "清单" }
                                         )
-                                        AppDexDivider()
-                                        AppDexRow(
+                                        AppXDivider()
+                                        AppXRow(
                                             icon = Icons.Default.Code,
                                             title = "DEX / 类浏览",
                                             detail = "${info.entries.count { it.name.endsWith(".dex") }} 个 DEX 文件",
                                             onClick = { onOpenDexBrowser() }
                                         )
-                                        AppDexDivider()
-                                        AppDexRow(
+                                        AppXDivider()
+                                        AppXRow(
                                             icon = Icons.Default.VpnKey,
                                             title = "签名验证",
                                             detail = info.signatures.joinToString(", ") { "v${it.version}" }.ifEmpty { "无签名" },
                                             onClick = { onOpenSigning() }
                                         )
-                                        AppDexDivider()
-                                        AppDexRow(
+                                        AppXDivider()
+                                        AppXRow(
                                             icon = Icons.Default.Build,
                                             title = "回编译 / 反编",
                                             detail = "Smali -> DEX -> APK -> 签名",
                                             onClick = { onOpenRepack() }
                                         )
-                                        AppDexDivider()
-                                        AppDexRow(
+                                        AppXDivider()
+                                        AppXRow(
                                             icon = Icons.Default.Folder,
                                             title = "APK 文件列表",
                                             detail = "${info.entries.size} 个文件",
@@ -288,33 +288,33 @@ fun ApkDetailScreen(
                         } else {
                             items(info.signatures) { sig ->
                                 Column(modifier = Modifier.padding(16.dp)) {
-                                    AppDexSection(label = "v${sig.version} 签名") {
+                                    AppXSection(label = "v${sig.version} 签名") {
                                         Column(modifier = Modifier.border(1.dp, BorderLight)) {
                                             DetailRow("算法", sig.algorithm)
-                                            AppDexDivider()
+                                            AppXDivider()
                                             if (sig.certificateSubject.isNotEmpty()) {
                                                 DetailRow("证书主体", sig.certificateSubject)
-                                                AppDexDivider()
+                                                AppXDivider()
                                             }
                                             if (sig.certificateIssuer.isNotEmpty()) {
                                                 DetailRow("颁发者", sig.certificateIssuer)
-                                                AppDexDivider()
+                                                AppXDivider()
                                             }
                                             if (sig.serialNumber.isNotEmpty()) {
                                                 DetailRow("序列号", sig.serialNumber)
-                                                AppDexDivider()
+                                                AppXDivider()
                                             }
                                             DetailRow("SHA-256", sig.sha256)
-                                            AppDexDivider()
+                                            AppXDivider()
                                             DetailRow("SHA-1", sig.sha1)
-                                            AppDexDivider()
+                                            AppXDivider()
                                             DetailRow("MD5", sig.md5)
                                             if (sig.validFrom > 0) {
-                                                AppDexDivider()
+                                                AppXDivider()
                                                 DetailRow("有效期起", FormatUtil.formatTimestamp(sig.validFrom))
                                             }
                                             if (sig.validTo > 0) {
-                                                AppDexDivider()
+                                                AppXDivider()
                                                 DetailRow("有效期至", FormatUtil.formatTimestamp(sig.validTo))
                                             }
                                         }
@@ -326,28 +326,28 @@ fun ApkDetailScreen(
                     "清单" -> {
                         item {
                             Column(modifier = Modifier.padding(16.dp)) {
-                                AppDexSection(label = "Manifest 信息") {
+                                AppXSection(label = "Manifest 信息") {
                                     Column(modifier = Modifier.border(1.dp, BorderLight)) {
                                         DetailRow("包名", info.manifest.packageName)
-                                        AppDexDivider()
+                                        AppXDivider()
                                         DetailRow("版本", "${info.manifest.versionName} (${info.manifest.versionCode})")
-                                        AppDexDivider()
+                                        AppXDivider()
                                         if (info.manifest.minSdk > 0) {
                                             DetailRow("Min SDK", "${info.manifest.minSdk}")
-                                            AppDexDivider()
+                                            AppXDivider()
                                         }
                                         if (info.manifest.targetSdk > 0) {
                                             DetailRow("Target SDK", "${info.manifest.targetSdk}")
-                                            AppDexDivider()
+                                            AppXDivider()
                                         }
                                         DetailRow("Activities", "${info.manifest.activities.size}")
-                                        AppDexDivider()
+                                        AppXDivider()
                                         DetailRow("Services", "${info.manifest.services.size}")
-                                        AppDexDivider()
+                                        AppXDivider()
                                         DetailRow("Receivers", "${info.manifest.receivers.size}")
-                                        AppDexDivider()
+                                        AppXDivider()
                                         DetailRow("Providers", "${info.manifest.providers.size}")
-                                        AppDexDivider()
+                                        AppXDivider()
                                         DetailRow("Permissions", "${info.manifest.permissions.size}")
                                     }
                                 }
@@ -356,17 +356,17 @@ fun ApkDetailScreen(
                         if (info.manifest.permissions.isNotEmpty()) {
                             item {
                                 Column(modifier = Modifier.padding(16.dp)) {
-                                    AppDexSection(label = "权限列表") {
+                                    AppXSection(label = "权限列表") {
                                         Column(modifier = Modifier.border(1.dp, BorderLight)) {
                                             info.manifest.permissions.forEachIndexed { index, perm ->
-                                                AppDexRow(
+                                                AppXRow(
                                                     icon = Icons.Default.Security,
                                                     title = perm,
                                                     iconTint = if (isDangerousPermission(perm)) RedSupergiant else AmberGold,
                                                     showChevron = false
                                                 )
                                                 if (index < info.manifest.permissions.size - 1) {
-                                                    AppDexDivider()
+                                                    AppXDivider()
                                                 }
                                             }
                                         }
@@ -379,7 +379,7 @@ fun ApkDetailScreen(
                         val dexFiles = info.entries.filter { it.name.endsWith(".dex") }
                         item {
                             Column(modifier = Modifier.padding(16.dp)) {
-                                AppDexSection(label = "DEX 文件 (${dexFiles.size})") {}
+                                AppXSection(label = "DEX 文件 (${dexFiles.size})") {}
                             }
                         }
                         if (dexFiles.isEmpty()) {
@@ -394,14 +394,14 @@ fun ApkDetailScreen(
                         } else {
                             items(dexFiles) { dex ->
                                 Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                                    AppDexRow(
+                                    AppXRow(
                                         icon = Icons.Default.Code,
                                         title = dex.name,
                                         detail = FormatUtil.formatFileSize(dex.size),
                                         iconTint = IconBlue,
                                         onClick = { onOpenDexBrowser() }
                                     )
-                                    AppDexDivider()
+                                    AppXDivider()
                                 }
                             }
                         }
@@ -410,7 +410,7 @@ fun ApkDetailScreen(
                         val resFiles = info.entries.filter { it.name.startsWith("res/") || it.name == "resources.arsc" || it.name.startsWith("assets/") }
                         item {
                             Column(modifier = Modifier.padding(16.dp)) {
-                                AppDexSection(label = "资源文件 (${resFiles.size})") {}
+                                AppXSection(label = "资源文件 (${resFiles.size})") {}
                             }
                         }
                         if (resFiles.isEmpty()) {
@@ -425,14 +425,14 @@ fun ApkDetailScreen(
                         } else {
                             items(resFiles.take(50)) { entry ->
                                 Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                                    AppDexRow(
+                                    AppXRow(
                                         icon = Icons.Default.Folder,
                                         title = entry.name,
                                         detail = FormatUtil.formatFileSize(entry.size),
                                         iconTint = AuroraGreen,
                                         showChevron = false
                                     )
-                                    AppDexDivider()
+                                    AppXDivider()
                                 }
                             }
                             if (resFiles.size > 50) {
@@ -450,19 +450,19 @@ fun ApkDetailScreen(
                     "文件" -> {
                         item {
                             Column(modifier = Modifier.padding(16.dp)) {
-                                AppDexSection(label = "APK 文件列表 (${info.entries.size})") {}
+                                AppXSection(label = "APK 文件列表 (${info.entries.size})") {}
                             }
                         }
                         items(info.entries.take(100)) { entry ->
                             Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                                AppDexRow(
+                                AppXRow(
                                     icon = if (entry.isDirectory) Icons.Default.Folder else Icons.Default.Code,
                                     title = entry.name,
                                     detail = FormatUtil.formatFileSize(entry.size),
                                     iconTint = if (entry.isDirectory) AmberGold else IconBlue,
                                     showChevron = false
                                 )
-                                AppDexDivider()
+                                AppXDivider()
                             }
                         }
                         if (info.entries.size > 100) {

@@ -1,4 +1,4 @@
-package com.appdex.repack
+﻿package com.appdex.repack
 
 import android.util.Log
 
@@ -52,7 +52,7 @@ class RepackagingRepository @Inject constructor(
         require(smaliContents.isNotEmpty()) { "No Smali content to compile" }
 
         // 创建临时目录
-        val tempDir = Files.createTempDirectory("appdex_smali_").toFile()
+        val tempDir = Files.createTempDirectory("AppX_smali_").toFile()
         val smaliDir = File(tempDir, "smali").apply { mkdirs() }
         val outputDex = File(tempDir, "output.dex")
 
@@ -87,7 +87,7 @@ class RepackagingRepository @Inject constructor(
                 Result.success(outputDex.readBytes())
             }
         } catch (e: Exception) {
-            Log.w("AppDex", "Suppressed exception", e)
+            Log.w("AppX", "Suppressed exception", e)
             Result.failure(e)
         } finally {
             tempDir.deleteRecursively()

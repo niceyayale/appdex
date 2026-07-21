@@ -1,4 +1,4 @@
-package com.appdex.tools
+﻿package com.appdex.tools
 
 import android.util.Log
 
@@ -77,7 +77,7 @@ fun EncodingConverterScreen(onBack: () -> Unit) {
                 }
             }
         } catch (e: Exception) {
-            Log.w("AppDex", "Suppressed exception", e)
+            Log.w("AppX", "Suppressed exception", e)
             "Error: ${e.message}"
         }
     }

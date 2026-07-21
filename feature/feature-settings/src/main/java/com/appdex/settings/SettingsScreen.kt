@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,15 +28,14 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Terminal
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -61,16 +62,20 @@ import com.appdex.data.ThemeMode
 import com.appdex.data.ai.AiConfig
 import com.appdex.data.ai.AiProviderType
 import com.appdex.data.session.ToolDisplayMode
-import com.appdex.ui.components.AppDexBar
-import com.appdex.ui.components.AppDexDivider
-import com.appdex.ui.components.AppDexSection
-import com.appdex.ui.components.AppDexToggle
-import com.appdex.ui.theme.*
+import com.appdex.ui.components.AppXBar
+import com.appdex.ui.components.AppXDivider
+import com.appdex.ui.components.AppXSection
+import com.appdex.ui.components.AppXToggle
+import com.appdex.ui.components.bounceClick
+import com.appdex.ui.theme.AppXTheme
+import com.appdex.ui.theme.DefaultBottomPadding
 
 @Composable
 fun SettingsScreen(
+    onNavigateToAiProviders: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
+    val c = AppXTheme.colors
     val themeMode by viewModel.themeMode.collectAsStateWithLifecycle(initialValue = ThemeMode.SYSTEM)
     val densityMode by viewModel.densityMode.collectAsStateWithLifecycle(initialValue = DensityMode.STANDARD)
     val languageMode by viewModel.languageMode.collectAsStateWithLifecycle(initialValue = LanguageMode.SYSTEM)
@@ -82,7 +87,10 @@ fun SettingsScreen(
     val termScrollback by viewModel.terminalScrollback.collectAsStateWithLifecycle(initialValue = 1000)
     val aiConfig by viewModel.aiConfig.collectAsStateWithLifecycle(initialValue = AiConfig())
     val isAiEnabled by viewModel.isAiEnabled.collectAsStateWithLifecycle(initialValue = false)
+    val savedProviders by viewModel.savedProviders.collectAsStateWithLifecycle(initialValue = emptyList())
+    val activeProvider by viewModel.activeProvider.collectAsStateWithLifecycle(initialValue = null)
     val displayMode by viewModel.displayMode.collectAsStateWithLifecycle(initialValue = ToolDisplayMode.NORMAL)
+    val testResult by viewModel.testResult.collectAsStateWithLifecycle()
 
     var showClearCacheDialog by rememberSaveable { mutableStateOf(false) }
     var cacheSize by rememberSaveable { mutableStateOf("") }
@@ -111,20 +119,19 @@ fun SettingsScreen(
         )
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(DeepSpaceBlue)) {
+    Box(modifier = Modifier.fillMaxSize().background(c.background)) {
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().imePadding(),
             contentPadding = PaddingValues(
                 start = 16.dp, end = 16.dp, top = 0.dp, bottom = DefaultBottomPadding
             ),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            item { AppDexBar(title = "设置") }
+            item { AppXBar(title = "设置") }
 
-            // ── Config section (expandable) ──
             item {
-                AppDexSection(label = "配置") {
-                    Column(modifier = Modifier.border(1.dp, BorderLight)) {
+                AppXSection(label = "配置") {
+                    Column(modifier = Modifier.border(1.dp, c.borderLight)) {
                         ExpandableConfigRow(
                             icon = Icons.Default.Folder,
                             title = "文件管理",
@@ -138,21 +145,21 @@ fun SettingsScreen(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text("显示隐藏文件", fontSize = 12.sp, color = TextPrimary)
-                                    AppDexToggle(checked = showHidden, onCheckedChange = { viewModel.setShowHidden(it) })
+                                    Text("显示隐藏文件", fontSize = 12.sp, color = c.textPrimary)
+                                    AppXToggle(checked = showHidden, onCheckedChange = { viewModel.setShowHidden(it) })
                                 }
-                                AppDexDivider()
+                                AppXDivider()
                                 Row(
                                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text("记住最后路径", fontSize = 12.sp, color = TextPrimary)
-                                    AppDexToggle(checked = rememberPath, onCheckedChange = { viewModel.setRememberPath(it) })
+                                    Text("记住最后路径", fontSize = 12.sp, color = c.textPrimary)
+                                    AppXToggle(checked = rememberPath, onCheckedChange = { viewModel.setRememberPath(it) })
                                 }
                             }
                         }
-                        AppDexDivider()
+                        AppXDivider()
 
                         ExpandableConfigRow(
                             icon = Icons.Default.DarkMode,
@@ -162,7 +169,7 @@ fun SettingsScreen(
                             onToggle = { expandedSection = if (expandedSection == "appearance") null else "appearance" }
                         ) {
                             Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-                                Text("主题模式", fontSize = 11.sp, color = TextSecondary, modifier = Modifier.padding(vertical = 6.dp))
+                                Text("主题模式", fontSize = 11.sp, color = c.textSecondary, modifier = Modifier.padding(vertical = 6.dp))
                                 SegmentedSelector(
                                     items = ThemeMode.entries,
                                     selected = themeMode,
@@ -176,7 +183,7 @@ fun SettingsScreen(
                                     }
                                 )
                                 Spacer(modifier = Modifier.height(12.dp))
-                                Text("信息密度", fontSize = 11.sp, color = TextSecondary, modifier = Modifier.padding(vertical = 6.dp))
+                                Text("信息密度", fontSize = 11.sp, color = c.textSecondary, modifier = Modifier.padding(vertical = 6.dp))
                                 SegmentedSelector(
                                     items = DensityMode.entries,
                                     selected = densityMode,
@@ -191,7 +198,7 @@ fun SettingsScreen(
                                 )
                             }
                         }
-                        AppDexDivider()
+                        AppXDivider()
 
                         ExpandableConfigRow(
                             icon = Icons.Default.Settings,
@@ -207,16 +214,12 @@ fun SettingsScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Column {
-                                        Text("缓存", fontSize = 12.sp, color = TextPrimary)
-                                        Text(
-                                            text = cacheSize,
-                                            fontSize = 10.sp,
-                                            color = TextSecondary
-                                        )
+                                        Text("缓存", fontSize = 12.sp, color = c.textPrimary)
+                                        Text(text = cacheSize, fontSize = 10.sp, color = c.textSecondary)
                                     }
                                     Row(
                                         modifier = Modifier
-                                            .border(1.dp, BorderMedium)
+                                            .border(1.dp, c.borderMedium)
                                             .clickable {
                                                 cacheSize = viewModel.getCacheSize()
                                                 showClearCacheDialog = true
@@ -224,9 +227,9 @@ fun SettingsScreen(
                                             .padding(horizontal = 12.dp, vertical = 6.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Icon(Icons.Default.CleaningServices, contentDescription = null, modifier = Modifier.size(16.dp), tint = TextSecondary)
+                                        Icon(Icons.Default.CleaningServices, contentDescription = null, modifier = Modifier.size(16.dp), tint = c.textSecondary)
                                         Spacer(modifier = Modifier.size(6.dp))
-                                        Text("清除", fontSize = 10.sp, color = TextSecondary)
+                                        Text("清除", fontSize = 10.sp, color = c.textSecondary)
                                     }
                                 }
                             }
@@ -235,156 +238,65 @@ fun SettingsScreen(
                 }
             }
 
-            // ── AI Configuration ──
             item {
-                AppDexSection(label = "AI 配置") {
-                    Column(modifier = Modifier.border(1.dp, BorderLight)) {
-                        // Provider selector
+                AppXSection(label = "AI 配置") {
+                    // Navigation card to AI Providers management page
+                    Column(modifier = Modifier.border(1.dp, c.borderLight)) {
                         Row(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .bounceClick(onClick = onNavigateToAiProviders)
+                                .padding(horizontal = 12.dp, vertical = 14.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.Default.Psychology, contentDescription = null, modifier = Modifier.size(18.dp), tint = IconBlue)
-                            Spacer(modifier = Modifier.size(8.dp))
-                            Text("AI 提供商", fontSize = 12.sp, color = TextPrimary, modifier = Modifier.weight(1f))
-                            Text(
-                                text = aiConfig.providerType.displayName,
-                                fontSize = 11.sp,
-                                color = AmberGold,
-                                fontFamily = FontFamily.Monospace
-                            )
-                        }
-                        AppDexDivider()
-                        // Provider list
-                        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
-                            AiProviderType.entries.chunked(2).forEach { row ->
-                                Row(modifier = Modifier.fillMaxWidth()) {
-                                    row.forEach { provider ->
-                                        val isSelected = provider == aiConfig.providerType
-                                        Column(
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .background(if (isSelected) AmberGold else Color.Transparent)
-                                                .clickable { viewModel.setAiProvider(provider) }
-                                                .padding(vertical = 8.dp),
-                                            horizontalAlignment = Alignment.CenterHorizontally
-                                        ) {
-                                            Text(
-                                                text = provider.displayName,
-                                                fontSize = 9.sp,
-                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                                color = if (isSelected) AmberGoldDark else TextSecondary
-                                            )
-                                        }
-                                    }
-                                    if (row.size == 1) Spacer(modifier = Modifier.weight(1f))
-                                }
-                            }
-                        }
-                        AppDexDivider()
-                        // API Key (for providers that need it)
-                        if (aiConfig.providerType !in listOf(
-                                AiProviderType.OLLAMA, AiProviderType.LM_STUDIO,
-                                AiProviderType.LOCALAI, AiProviderType.ANYTHINGLLM
-                            )) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .background(c.surfaceAlt),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Text("API Key", fontSize = 11.sp, color = TextSecondary, modifier = Modifier.width(60.dp))
-                                OutlinedTextField(
-                                    value = aiConfig.apiKey,
-                                    onValueChange = { viewModel.setAiApiKey(it) },
-                                    modifier = Modifier.weight(1f),
-                                    placeholder = { Text("输入 API Key", fontSize = 10.sp, color = TextMuted) },
-                                    singleLine = true,
-                                    visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
-                                    colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-                                        focusedTextColor = TextPrimary,
-                                        unfocusedTextColor = TextPrimary,
-                                        focusedBorderColor = AmberGold,
-                                        unfocusedBorderColor = BorderMedium,
-                                        cursorColor = AmberGold
-                                    ),
-                                    textStyle = androidx.compose.ui.text.TextStyle(fontSize = 11.sp)
+                                Icon(Icons.Default.Psychology, contentDescription = null, modifier = Modifier.size(18.dp), tint = c.iconBlue)
+                            }
+                            Spacer(modifier = Modifier.size(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("AI 提供商", fontSize = 12.sp, color = c.textPrimary, fontWeight = FontWeight.SemiBold)
+                                val providerCount = savedProviders.size
+                                val activeName = activeProvider?.name
+                                val detailText = when {
+                                    activeName != null -> "当前: $activeName"
+                                    providerCount > 0 -> "$providerCount 个提供商，未选择"
+                                    else -> "点击新建提供商配置"
+                                }
+                                Text(
+                                    text = detailText,
+                                    fontSize = 10.sp,
+                                    color = c.textSecondary,
+                                    modifier = Modifier.padding(top = 2.dp)
                                 )
                             }
-                            AppDexDivider()
-                        }
-                        // Base URL
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("Base URL", fontSize = 11.sp, color = TextSecondary, modifier = Modifier.width(60.dp))
-                            OutlinedTextField(
-                                value = aiConfig.baseUrl,
-                                onValueChange = { viewModel.setAiBaseUrl(it) },
-                                modifier = Modifier.weight(1f),
-                                placeholder = { Text(aiConfig.providerType.let { p -> AiConfig(providerType = p).effectiveBaseUrl() }, fontSize = 10.sp, color = TextMuted) },
-                                singleLine = true,
-                                colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-                                    focusedTextColor = TextPrimary,
-                                    unfocusedTextColor = TextPrimary,
-                                    focusedBorderColor = AmberGold,
-                                    unfocusedBorderColor = BorderMedium,
-                                    cursorColor = AmberGold
-                                ),
-                                textStyle = androidx.compose.ui.text.TextStyle(fontSize = 11.sp)
-                            )
-                        }
-                        AppDexDivider()
-                        // Model name
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("模型", fontSize = 11.sp, color = TextSecondary, modifier = Modifier.width(60.dp))
-                            OutlinedTextField(
-                                value = aiConfig.modelName,
-                                onValueChange = { viewModel.setAiModel(it) },
-                                modifier = Modifier.weight(1f),
-                                placeholder = { Text(aiConfig.defaultModels().firstOrNull() ?: "模型名称", fontSize = 10.sp, color = TextMuted) },
-                                singleLine = true,
-                                colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-                                    focusedTextColor = TextPrimary,
-                                    unfocusedTextColor = TextPrimary,
-                                    focusedBorderColor = AmberGold,
-                                    unfocusedBorderColor = BorderMedium,
-                                    cursorColor = AmberGold
-                                ),
-                                textStyle = androidx.compose.ui.text.TextStyle(fontSize = 11.sp)
-                            )
-                        }
-                        // Status
-                        AppDexDivider()
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text("状态", fontSize = 11.sp, color = TextSecondary)
+                            // Status indicator
                             Text(
                                 text = if (isAiEnabled) "已配置" else "未配置",
-                                fontSize = 11.sp,
-                                color = if (isAiEnabled) AuroraGreen else RedSupergiant,
+                                fontSize = 10.sp,
+                                color = if (isAiEnabled) c.auroraGreen else c.redSupergiant,
                                 fontWeight = FontWeight.SemiBold
                             )
+                            Spacer(modifier = Modifier.size(8.dp))
+                            Icon(Icons.Default.ChevronRight, contentDescription = null, modifier = Modifier.size(18.dp), tint = c.textTertiary)
                         }
                     }
                 }
             }
 
-            // ── Display Mode ──
             item {
-                AppDexSection(label = "工具显示模式") {
-                    Column(modifier = Modifier.border(1.dp, BorderLight)) {
+                AppXSection(label = "工具显示模式") {
+                    Column(modifier = Modifier.border(1.dp, c.borderLight)) {
                         ToolDisplayMode.entries.forEachIndexed { index, mode ->
                             val isSelected = mode == displayMode
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .background(if (isSelected) AmberGold.copy(alpha = 0.1f) else Color.Transparent)
+                                    .background(if (isSelected) c.amberGold.copy(alpha = 0.1f) else Color.Transparent)
                                     .clickable { viewModel.setDisplayMode(mode) }
                                     .padding(horizontal = 12.dp, vertical = 12.dp),
                                 verticalAlignment = Alignment.CenterVertically
@@ -397,7 +309,7 @@ fun SettingsScreen(
                                             ToolDisplayMode.EXPERT -> "专家模式"
                                         },
                                         fontSize = 12.sp,
-                                        color = if (isSelected) AmberGold else TextPrimary,
+                                        color = if (isSelected) c.amberGold else c.textPrimary,
                                         fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
                                     )
                                     Text(
@@ -407,25 +319,24 @@ fun SettingsScreen(
                                             ToolDisplayMode.EXPERT -> "显示原始技术名称"
                                         },
                                         fontSize = 10.sp,
-                                        color = TextSecondary,
+                                        color = c.textSecondary,
                                         modifier = Modifier.padding(top = 2.dp)
                                     )
                                 }
                                 if (isSelected) {
-                                    Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp), tint = AmberGold)
+                                    Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp), tint = c.amberGold)
                                 }
                             }
                             if (index < ToolDisplayMode.entries.size - 1) {
-                                AppDexDivider()
+                                AppXDivider()
                             }
                         }
                     }
                 }
             }
 
-            // ── Language ──
             item {
-                AppDexSection(label = "语言") {
+                AppXSection(label = "语言") {
                     SegmentedSelector(
                         items = LanguageMode.entries,
                         selected = languageMode,
@@ -441,7 +352,7 @@ fun SettingsScreen(
                     Text(
                         text = "语言切换将在应用重启后生效",
                         fontSize = 10.sp,
-                        color = TextSecondary,
+                        color = c.textSecondary,
                         modifier = Modifier.padding(top = 4.dp)
                     )
                     Row(
@@ -450,35 +361,30 @@ fun SettingsScreen(
                             .clickable {
                                 val packageManager = context.packageManager
                                 val intent = packageManager.getLaunchIntentForPackage(context.packageName)
-                                intent?.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+                                intent?.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK)
                                 context.startActivity(intent)
-                                Runtime.getRuntime().exit(0)
+                                android.os.Process.killProcess(android.os.Process.myPid())
                             }
                             .padding(vertical = 8.dp),
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(14.dp), tint = IconBlueBright)
-                        Text(
-                            text = " 立即重启应用",
-                            fontSize = 11.sp,
-                            color = IconBlueBright
-                        )
+                        Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(14.dp), tint = c.iconBlueBright)
+                        Text(text = " 立即重启应用", fontSize = 11.sp, color = c.iconBlueBright)
                     }
                 }
             }
 
-            // ── Editor settings ──
             item {
-                AppDexSection(label = "编辑器") {
+                AppXSection(label = "编辑器") {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .border(1.dp, BorderLight)
-                            .background(SurfaceDeep)
+                            .border(1.dp, c.borderLight)
+                            .background(c.surfaceDeep)
                             .padding(16.dp)
                     ) {
-                        Text("字体大小: $fontSize sp", fontSize = 12.sp, color = TextPrimary)
+                        Text("字体大小: $fontSize sp", fontSize = 12.sp, color = c.textPrimary)
                         Slider(
                             value = fontSize.toFloat(),
                             onValueChange = { viewModel.setFontSize(it.toInt()) },
@@ -486,7 +392,7 @@ fun SettingsScreen(
                             steps = 13
                         )
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text("Tab 宽度: $tabWidth", fontSize = 12.sp, color = TextPrimary)
+                        Text("Tab 宽度: $tabWidth", fontSize = 12.sp, color = c.textPrimary)
                         Slider(
                             value = tabWidth.toFloat(),
                             onValueChange = { viewModel.setTabWidth(it.toInt()) },
@@ -497,17 +403,16 @@ fun SettingsScreen(
                 }
             }
 
-            // ── Terminal settings ──
             item {
-                AppDexSection(label = "终端") {
+                AppXSection(label = "终端") {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .border(1.dp, BorderLight)
-                            .background(SurfaceDeep)
+                            .border(1.dp, c.borderLight)
+                            .background(c.surfaceDeep)
                             .padding(16.dp)
                     ) {
-                        Text("字体大小: $termFontSize sp", fontSize = 12.sp, color = TextPrimary)
+                        Text("字体大小: $termFontSize sp", fontSize = 12.sp, color = c.textPrimary)
                         Slider(
                             value = termFontSize.toFloat(),
                             onValueChange = { viewModel.setTerminalFontSize(it.toInt()) },
@@ -515,7 +420,7 @@ fun SettingsScreen(
                             steps = 9
                         )
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text("回滚行数: $termScrollback", fontSize = 12.sp, color = TextPrimary)
+                        Text("回滚行数: $termScrollback", fontSize = 12.sp, color = c.textPrimary)
                         Slider(
                             value = termScrollback.toFloat(),
                             onValueChange = { viewModel.setTerminalScrollback(it.toInt()) },
@@ -526,18 +431,17 @@ fun SettingsScreen(
                 }
             }
 
-            // ── About ──
             item {
-                AppDexSection(label = "关于") {
-                    Column(modifier = Modifier.border(1.dp, BorderLight)) {
+                AppXSection(label = "关于") {
+                    Column(modifier = Modifier.border(1.dp, c.borderLight)) {
                         AboutRow("版本", viewModel.getAppVersion())
-                        AppDexDivider()
+                        AppXDivider()
                         AboutRow("协议", "Apache 2.0")
-                        AppDexDivider()
-                        AboutRow("GitHub", "github.com/niceyayale/appdex")
-                        AppDexDivider()
+                        AppXDivider()
+                        AboutRow("GitHub", "github.com/niceyayale/AppX")
+                        AppXDivider()
                         AboutRow("引擎", "Jetpack Compose")
-                        AppDexDivider()
+                        AppXDivider()
                         AboutRow("Min Android", "8.0 (API 26)")
                     }
                 }
@@ -545,9 +449,9 @@ fun SettingsScreen(
 
             item {
                 Text(
-                    text = "APPDEX · 开源 Android 工具箱",
+                    text = "AppX · 开源 Android 工具箱",
                     fontSize = 10.sp,
-                    color = TextTertiary,
+                    color = c.textTertiary,
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center
                 )
@@ -565,6 +469,7 @@ private fun ExpandableConfigRow(
     onToggle: () -> Unit,
     content: @Composable () -> Unit
 ) {
+    val c = AppXTheme.colors
     Column {
         Row(
             modifier = Modifier
@@ -577,20 +482,20 @@ private fun ExpandableConfigRow(
             Box(
                 modifier = Modifier
                     .size(36.dp)
-                    .background(SurfaceAlt),
+                    .background(c.surfaceAlt),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp), tint = IconBlue)
+                Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp), tint = c.iconBlue)
             }
             Column(modifier = Modifier.weight(1f)) {
-                Text(title, fontSize = 12.sp, color = TextPrimary)
-                Text(detail, fontSize = 10.sp, color = TextSecondary, modifier = Modifier.padding(top = 2.dp))
+                Text(title, fontSize = 12.sp, color = c.textPrimary)
+                Text(detail, fontSize = 10.sp, color = c.textSecondary, modifier = Modifier.padding(top = 2.dp))
             }
             Icon(
                 Icons.Default.KeyboardArrowDown,
                 contentDescription = if (isExpanded) "Collapse" else "Expand",
                 modifier = Modifier.size(18.dp),
-                tint = TextTertiary
+                tint = c.textTertiary
             )
         }
         AnimatedVisibility(
@@ -610,17 +515,18 @@ private fun <T> SegmentedSelector(
     onSelect: (T) -> Unit,
     label: (T) -> String
 ) {
+    val c = AppXTheme.colors
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.dp, BorderMedium)
+            .border(1.dp, c.borderMedium)
     ) {
         items.forEach { item ->
             val isSelected = item == selected
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .background(if (isSelected) AmberGold else Color.Transparent)
+                    .background(if (isSelected) c.amberGold else Color.Transparent)
                     .clickable { onSelect(item) }
                     .padding(vertical = 10.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -629,7 +535,7 @@ private fun <T> SegmentedSelector(
                     text = label(item),
                     fontSize = 10.sp,
                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                    color = if (isSelected) AmberGoldDark else TextSecondary
+                    color = if (isSelected) c.amberGoldDark else c.textSecondary
                 )
             }
         }
@@ -638,12 +544,13 @@ private fun <T> SegmentedSelector(
 
 @Composable
 private fun AboutRow(label: String, value: String) {
+    val c = AppXTheme.colors
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(label, fontSize = 12.sp, color = TextPrimary)
-        Text(value, fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = TextSecondary)
+        Text(label, fontSize = 12.sp, color = c.textPrimary)
+        Text(value, fontSize = 11.sp, fontFamily = FontFamily.Monospace, color = c.textSecondary)
     }
 }

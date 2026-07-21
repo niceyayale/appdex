@@ -1,4 +1,4 @@
-package com.appdex.sqliteviewer
+﻿package com.appdex.sqliteviewer
 
 import android.util.Log
 
@@ -55,7 +55,7 @@ class SqliteViewerViewModel @Inject constructor(
                 val tables = repository.getTables()
                 update { it.copy(tables = tables, isLoading = false) }
             } catch (e: Exception) {
-                Log.w("AppDex", "Suppressed exception", e)
+                Log.w("AppX", "Suppressed exception", e)
                 update { it.copy(isLoading = false, error = e.message) }
                 emitEffect(SqliteViewerEffect.ShowMessage("打开失败: ${e.message}"))
             }
@@ -70,7 +70,7 @@ class SqliteViewerViewModel @Inject constructor(
                 val tables = repository.getTables()
                 update { it.copy(tables = tables, isLoading = false) }
             } catch (e: Exception) {
-                Log.w("AppDex", "Suppressed exception", e)
+                Log.w("AppX", "Suppressed exception", e)
                 update { it.copy(isLoading = false, error = e.message) }
                 emitEffect(SqliteViewerEffect.ShowMessage("打开失败: ${e.message}"))
             }
@@ -92,7 +92,7 @@ class SqliteViewerViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
-                Log.w("AppDex", "Suppressed exception", e)
+                Log.w("AppX", "Suppressed exception", e)
                 update { it.copy(isLoading = false, error = e.message) }
                 emitEffect(SqliteViewerEffect.ShowMessage("查询失败: ${e.message}"))
             }
@@ -110,7 +110,7 @@ class SqliteViewerViewModel @Inject constructor(
                 update { it.copy(queryResult = result, isLoading = false) }
                 emitEffect(SqliteViewerEffect.ShowMessage("查询成功: ${result.rows.size} 行"))
             } catch (e: Exception) {
-                Log.w("AppDex", "Suppressed exception", e)
+                Log.w("AppX", "Suppressed exception", e)
                 update { it.copy(isLoading = false, error = e.message) }
                 emitEffect(SqliteViewerEffect.ShowMessage("查询失败: ${e.message}"))
             }
