@@ -39,17 +39,25 @@ jobs:
         run: ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Build release APK
+        id: build_release
+        continue-on-error: true
         run: ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Rename APKs
+        id: rename
         run: |
           DEBUG_APK="app/build/outputs/apk/debug/app-debug.apk"
+          cp "$DEBUG_APK" "appdex-${{ steps.version.outputs.VERSION_NAME }}-debug.apk"
           RELEASE_APK="app/build/outputs/apk/release/app-release-unsigned.apk"
           if [ ! -f "$RELEASE_APK" ]; then
             RELEASE_APK="app/build/outputs/apk/release/app-release.apk"
           fi
-          cp "$DEBUG_APK" "appdex-${{ steps.version.outputs.VERSION_NAME }}-debug.apk"
-          cp "$RELEASE_APK" "appdex-${{ steps.version.outputs.VERSION_NAME }}-release.apk"
+          if [ -f "$RELEASE_APK" ]; then
+            cp "$RELEASE_APK" "appdex-${{ steps.version.outputs.VERSION_NAME }}-release.apk"
+            echo "has_release=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_release=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Extract changelog section
         id: changelog
@@ -73,7 +81,7 @@ jobs:
             ### Download
 
             - **Debug APK**: For testing, includes debug logging
-            - **Release APK**: Production build (minified + shrunk, unsigned)
+            - **Release APK**: Production build (minified + shrunk, unsigned) ${{ steps.rename.outputs.has_release == 'false' && '(Not available - R8 build failed, use debug APK)' || '' }}
 
             ### Install
 
@@ -88,3 +96,4 @@ jobs:
             appdex-${{ steps.version.outputs.VERSION_NAME }}-release.apk
           draft: false
           prerelease: false
+          fail_on_unmatched_files: false
