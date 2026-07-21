@@ -5,6 +5,33 @@ All notable changes to APPDEX will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v3.0.0] - 2026-07-21
+
+### Workspace Intelligence - Workspace OS Architecture
+- **WorkspaceObject**: Single source of truth for entire app state
+- **WorkspaceEventBus**: Central event system for cross-tool communication (SharedFlow-based)
+- **WorkspaceController**: Brain that processes all events and updates state
+- **WorkspaceInspector**: Global sidebar showing APK/Tool/Selection/Breadcrumbs/AI Insights/Timeline
+- **Cross-Tool Intelligence**: Any object can navigate to any tool (web not tree)
+- **AI Workspace Awareness**: Proactive insights without user asking
+  - Auto-detects Flutter/Unity engines from class names and native libs
+  - Auto-warns on dangerous permissions and exported components
+  - Auto-explains tool purpose when entering each view
+- **Live Report**: Real-time updates via reportRevision StateFlow
+- **Workspace Memory**: AI remembers recent actions via buildWorkspaceMemory()
+- **Event sources**: Security/Signing/Repack/Editor all emit WorkspaceEvents
+- **Phase 7 Polish**: AutoMirrored icons, unified design system, empty states
+
+## [v2.0.0] - 2026-07-15
+
+### AI Native APK Analysis Platform
+- **AI Integration**: Streaming chat with OpenRouter API, session persistence
+- **Session Management**: Multi-session support with Room database
+- **Tool Bridge**: Structured AI responses for actionable insights
+- **Search**: Global search across manifest, DEX, resources
+- **Theme Optimization**: Refined color scheme and typography
+- **Risk Score Calculator**: Automated security risk scoring
+
 ## [v1.0.0] - 2026-07-12
 
 ### Project Completion
