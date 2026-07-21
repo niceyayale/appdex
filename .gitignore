@@ -60,3 +60,54 @@ Thumbs.db
 # Secrets
 secrets.properties
 *.env
+ai_config.md
+
+# Kotlin compiler sessions (temp)
+.kotlin/
+
+# Build/compile/lint output logs
+build-*.txt
+compile-*.txt
+compile_output.txt
+lint-output*.txt
+logcat-output.txt
+
+# Fix scripts (temp)
+fix-*.ps1
+fix3.ps1
+fix4.ps1
+fix5.ps1
+fix6.ps1
+fix7.ps1
+fix8.ps1
+fix9.ps1
+fix10.ps1
+fix11.ps1
+
+# Screenshots and UI dumps (temp debugging artifacts)
+rc-screenshot-*.png
+rc-walkthrough-*.png
+rc3_*.png
+rc3_*.xml
+rc_walk_*.png
+rc_walk_*.xml
+rc_ws_*.png
+rc_ws_*.xml
+rc-ui-dump-*.xml
+rc4_*.png
+ws-*.png
+ws-screenshot-*.png
+wi_*.png
+wi_*.xml
+pw_*.png
+pw_*.xml
+pw.xml
+ui-dump-*.xml
+ui-ws*.xml
+ui-dump.xml
+verify-screenshot.png
+AppDex_UI_Overview_*.png
+test-screenshots/
+
+# Temp scripts
+gen_ui_mockups.py
